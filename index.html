@@ -1,0 +1,1937 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ASM MASTER - Data Hub</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+    <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #0f172a;
+            --bg-secondary: #1e293b;
+            --accent: #6366f1;
+            --accent-glow: rgba(99, 102, 241, 0.4);
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            margin: 0;
+            overflow: hidden;
+            height: 100vh;
+        }
+
+        /* Glassmorphism Upload Zone */
+        .upload-container {
+            background: radial-gradient(circle at top right, #1e1b4b, #0f172a 80%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            width: 100%;
+            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .drop-zone {
+            width: 100%;
+            min-height: 180px;
+            padding: 1.5rem;
+            border: 2px dashed rgba(255, 255, 255, 0.2);
+            border-radius: 1.25rem;
+            background: rgba(30, 41, 59, 0.5);
+            backdrop-filter: blur(10px);
+            text-align: center;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            border-style: dashed;
+        }
+
+        .drop-zone:hover, .drop-zone.active {
+            border-color: var(--accent);
+            border-style: solid;
+            background: rgba(99, 102, 241, 0.15);
+            box-shadow: 0 0 30px var(--accent-glow);
+            transform: translateY(-4px);
+        }
+
+        .drop-zone.ready {
+            border-color: #10b981;
+            background: rgba(16, 185, 129, 0.1);
+            border-style: solid;
+        }
+
+        .drop-zone.dragover::after {
+            content: '';
+            position: absolute;
+            inset: -4px;
+            border-radius: 2.1rem;
+            background: linear-gradient(45deg, var(--accent), #f43f5e, var(--accent));
+            opacity: 0.3;
+            z-index: -1;
+            filter: blur(10px);
+        }
+
+        .animate-float {
+            animation: float 6s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-20px); }
+        }
+
+        .dashboard-container {
+            display: none; /* Default hidden */
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            grid-template-columns: 280px 1fr;
+            background: #0f172a;
+            z-index: 100;
+        }
+
+        .dashboard-container.active {
+            display: grid !important;
+            opacity: 1 !important;
+            visibility: visible !important;
+            pointer-events: all !important;
+        }
+
+        .hidden-offscreen, .hidden {
+            display: none !important;
+        }
+
+        .view-content {
+            display: none;
+            width: 100%;
+            height: 100%;
+        }
+
+        .view-content.active {
+            display: block;
+        }
+
+        .sidebar {
+            width: 260px;
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(12px);
+            border-right: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 2rem;
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+        }
+
+        .nav-item {
+            padding: 0.75rem 1rem;
+            border-radius: 0.75rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            color: var(--text-secondary);
+        }
+
+        .nav-item:hover, .nav-item.active {
+            background: rgba(255, 255, 255, 0.05);
+            color: white;
+        }
+
+        .nav-item.active {
+            border-left: 3px solid var(--accent);
+            background: linear-gradient(to right, rgba(99, 102, 241, 0.15), transparent);
+            font-weight: 700;
+        }
+
+        .card {
+            background: rgba(30, 41, 59, 0.4);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 1.25rem;
+            padding: 1.5rem;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            border-color: rgba(99, 102, 241, 0.3);
+        }
+
+        .metric-value {
+            font-size: 2.25rem;
+            font-weight: 700;
+            background: linear-gradient(to bottom right, #fff, #94a3b8);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .chart-container {
+            height: 300px;
+            width: 100%;
+        }
+
+        /* Loading Overlay */
+        #loading-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.95);
+            backdrop-filter: blur(15px);
+            z-index: 9999;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            gap: 2rem;
+            transition: opacity 0.3s;
+        }
+
+        .spinner {
+            width: 64px;
+            height: 64px;
+            border: 6px solid rgba(99, 102, 241, 0.1);
+            border-left-color: #6366f1;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            filter: drop-shadow(0 0 10px rgba(99, 102, 241, 0.5));
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: var(--bg-primary); }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #475569; }
+
+        /* Category Deep Dive Modal */
+        #category-drilldown-modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.9);
+            backdrop-filter: blur(12px);
+            z-index: 2000;
+            opacity: 0;
+            transition: all 0.4s ease;
+            overflow-y: auto;
+            padding: 2rem 1rem;
+        }
+
+        #category-drilldown-modal.active {
+            display: flex;
+            opacity: 1;
+        }
+
+        .modal-content-wrapper {
+            width: 100%;
+            max-width: 1000px;
+            margin: auto;
+            background: #1e293b;
+            border-radius: 2rem;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            overflow: hidden;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5), 0 0 40px rgba(99, 102, 241, 0.1);
+            transform: scale(0.9) translateY(20px);
+            transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        #category-drilldown-modal.active .modal-content-wrapper {
+            transform: scale(1) translateY(0);
+        }
+
+        /* SKU Modal */
+        #sku-drilldown-modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.85);
+            backdrop-filter: blur(10px);
+            z-index: 3000;
+            opacity: 0;
+            transition: all 0.3s ease;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+        }
+
+        #sku-drilldown-modal.active {
+            display: flex;
+            opacity: 1;
+        }
+
+        .sku-modal .modal-content-wrapper {
+            transform: scale(0.95) translateY(10px);
+            border: 1px solid rgba(99, 102, 241, 0.2);
+            background: #0f172a;
+        }
+
+        #sku-drilldown-modal.active .modal-content-wrapper {
+            transform: scale(1) translateY(0);
+        }
+
+        .sku-item {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 1rem;
+            padding: 1rem;
+            transition: all 0.2s ease;
+        }
+
+        .sku-item:hover {
+            background: rgba(255, 255, 255, 0.05);
+            border-color: rgba(99, 102, 241, 0.3);
+        }
+
+        .drilldown-grid {
+            display: grid;
+            grid-template-columns: 1fr 1.5fr;
+            gap: 2rem;
+            padding: 2.5rem;
+        }
+
+        @media (max-width: 768px) {
+            .drilldown-grid { grid-template-columns: 1fr; }
+        }
+
+        .drilldown-list-item {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 1rem;
+            padding: 1rem;
+            margin-bottom: 0.75rem;
+            transition: all 0.2s;
+        }
+
+        .drilldown-list-item:hover {
+            background: rgba(255, 255, 255, 0.06);
+            transform: translateX(4px);
+        }
+
+        .drilldown-list-item.active {
+            border-color: var(--accent);
+            background: rgba(99, 102, 241, 0.1);
+            box-shadow: 0 0 15px var(--accent-glow);
+        }
+
+        .product-details {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out;
+        }
+
+        .product-details.expanded {
+            max-height: 1000px;
+        }
+
+        .rotate-icon {
+            transition: transform 0.3s ease;
+        }
+
+        .rotate-icon.expanded {
+            transform: rotate(180deg);
+        }
+    </style>
+</head>
+<body>
+    <!-- Category Drilldown Modal -->
+    <div id="category-drilldown-modal">
+        <div class="modal-content-wrapper shadow-2xl">
+            <div class="p-8 border-b border-white/10 flex justify-between items-center bg-slate-800/50">
+                <div>
+                    <h3 id="drilldown-title" class="text-3xl font-bold text-white mb-1">Category Performance</h3>
+                    <p id="drilldown-subtitle" class="text-slate-400 font-medium">Deep dive analysis into category sales</p>
+                </div>
+                <button onclick="closeCategoryDrilldown()" class="w-12 h-12 rounded-full bg-white/5 hover:bg-rose-500/20 hover:text-rose-400 text-slate-400 transition-all flex items-center justify-center border border-white/10">
+                    <i data-lucide="x" class="w-6 h-6"></i>
+                </button>
+            </div>
+            
+            <div class="drilldown-grid">
+                <!-- Left Column: Branch Distribution -->
+                <div class="space-y-6">
+                    <div>
+                        <h4 class="text-sm font-black uppercase text-indigo-400 tracking-widest mb-4 flex items-center gap-2">
+                            <i data-lucide="map-pin" class="w-4 h-4"></i>
+                            Branch Contribution
+                        </h4>
+                        <div id="drilldown-branch-list" class="max-h-[500px] overflow-y-auto pr-2 custom-scrollbar">
+                            <!-- Branch Items -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right Column: Product Breakdown -->
+                <div class="space-y-6">
+                    <div>
+                        <h4 class="text-sm font-black uppercase text-emerald-400 tracking-widest mb-4 flex items-center gap-2">
+                            <i data-lucide="box" class="w-4 h-4"></i>
+                            Product Models
+                        </h4>
+                        <div id="drilldown-product-list" class="max-h-[500px] overflow-y-auto pr-2 custom-scrollbar">
+                            <!-- Product Items -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-slate-800/30 p-6 border-t border-white/10 flex justify-between items-center">
+                <div class="flex gap-8">
+                    <div>
+                        <p class="text-[10px] font-black uppercase text-slate-500 mb-1">Total MTD Actual</p>
+                        <p id="drilldown-total-val" class="text-xl font-bold text-white">฿0</p>
+                    </div>
+                    <div>
+                        <p class="text-[10px] font-black uppercase text-slate-500 mb-1">Active Branches</p>
+                        <p id="drilldown-total-branches" class="text-xl font-bold text-white">0</p>
+                    </div>
+                </div>
+                <div class="text-right">
+                    <p class="text-[10px] font-black uppercase text-indigo-400 mb-1">Performance Status</p>
+                    <p class="text-sm font-bold text-emerald-400">Analysis Mode</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SKU Drilldown Modal -->
+    <div id="sku-drilldown-modal" class="sku-modal">
+        <div class="modal-content-wrapper max-w-2xl shadow-2xl skew-fix">
+            <div class="p-6 border-b border-white/10 flex justify-between items-center bg-indigo-950/20">
+                <div>
+                    <h3 id="sku-title" class="text-2xl font-bold text-white mb-0.5">SKU Breakdown</h3>
+                    <p id="sku-subtitle" class="text-[11px] text-slate-400 font-medium uppercase tracking-widest">Detailed variant analysis</p>
+                </div>
+                <button onclick="closeSkuDrilldown()" class="w-10 h-10 rounded-full bg-white/5 hover:bg-rose-500/20 hover:text-rose-400 text-slate-400 transition-all flex items-center justify-center border border-white/10">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            
+            <div class="p-6 max-h-[60vh] overflow-y-auto custom-scrollbar">
+                <div id="sku-list" class="space-y-4">
+                    <!-- SKU Items -->
+                </div>
+            </div>
+
+            <div class="bg-indigo-950/40 p-5 border-t border-white/10 flex justify-between items-center">
+                <div class="flex gap-6">
+                    <div>
+                        <p class="text-[9px] font-black uppercase text-slate-500 mb-0.5">Detail Sum</p>
+                        <p id="sku-total-val" class="text-lg font-bold text-white">฿0</p>
+                    </div>
+                </div>
+                <button onclick="closeSkuDrilldown()" class="px-6 py-2 bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-400 rounded-xl text-xs font-black transition-all uppercase tracking-widest border border-indigo-500/30">
+                    Back to Category
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div id="loading-overlay">
+        <div class="spinner"></div>
+        <div class="text-center">
+            <h2 class="text-2xl font-black text-white mb-2 tracking-tight">SYNCHRONIZING DATA</h2>
+            <p class="text-slate-400 font-medium">Processing large multi-branch datasets... This may take a few seconds.</p>
+        </div>
+    </div>
+
+    <!-- Upload Hub Landing Page -->
+    <div id="upload-hub" class="upload-container">
+        <div class="flex flex-col items-center gap-8 max-w-6xl px-6 w-full">
+            <div class="text-center">
+                <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-xs font-bold tracking-widest uppercase mb-4">
+                    <span class="relative flex h-2 w-2">
+                        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
+                        <span class="relative inline-flex rounded-full h-2 w-2 bg-indigo-500"></span>
+                    </span>
+                    Multi-Branch System v2.0
+                </div>
+                <h1 class="text-6xl font-black tracking-tighter mb-2 italic">
+                    ASM <span class="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-rose-400">MASTER</span>
+                </h1>
+                <p class="text-slate-400 text-lg max-w-2xl mx-auto">
+                    Initialize your multi-branch dashboard by uploading the 5 critical data files below.
+                </p>
+            </div>
+
+            <!-- Centralized Bulk Upload Section -->
+            <div class="max-w-4xl mx-auto mb-16">
+                <div class="relative group">
+                    <div class="absolute -inset-1 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-2xl blur opacity-25 group-hover:opacity-50 transition duration-1000 group-hover:duration-200"></div>
+                    <div class="relative bg-slate-900 ring-1 ring-white/10 rounded-2xl p-8 md:p-12 flex flex-col items-center text-center">
+                        <div class="w-20 h-20 bg-indigo-500/10 rounded-full flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-500">
+                            <i data-lucide="upload-cloud" class="w-10 h-10 text-indigo-400"></i>
+                        </div>
+                        <h2 class="text-2xl md:text-3xl font-bold mb-3">Smart Multi-Upload</h2>
+                        <p class="text-slate-400 mb-8 max-w-md">Select all 5 files at once. Our AI will automatically categorize and assign them to the correct steps below.</p>
+                        
+                        <input type="file" id="bulk-upload" class="hidden" multiple accept=".xlsx, .xls" onchange="handleBulkUpload(event)">
+                        <button onclick="document.getElementById('bulk-upload').click()" class="px-10 py-4 bg-indigo-600 hover:bg-indigo-500 rounded-xl font-bold text-lg shadow-lg shadow-indigo-500/25 transition-all hover:-translate-y-1 flex items-center gap-3">
+                            <span>CLICK TO SELECT ALL FILES</span>
+                            <i data-lucide="plus-square" class="w-6 h-6"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Steps Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-5 gap-6 mb-16 px-4">
+                <!-- Step 1: Target -->
+                <div id="slot-target" class="step-card group opacity-50">
+                    <div class="absolute top-4 right-4 text-emerald-400 opacity-0 group-[.ready]:opacity-100 transition-opacity">
+                        <i data-lucide="check-circle" class="w-6 h-6"></i>
+                    </div>
+                    <div class="step-badge">STEP 1</div>
+                    <div class="w-16 h-16 bg-gradient-to-br from-amber-400/20 to-orange-500/20 rounded-2xl flex items-center justify-center mb-6 group-[.ready]:from-emerald-400/20 group-[.ready]:to-emerald-600/20 transition-all duration-500">
+                        <i data-lucide="target" class="w-8 h-8 text-amber-500 group-[.ready]:text-emerald-400 transition-colors"></i>
+                    </div>
+                    <h3 class="font-bold text-lg mb-2">TARGET</h3>
+                    <p class="text-xs text-slate-400 mb-6 font-medium">ไฟล์เป้าหมายรายเดือน</p>
+                    <div id="status-target" class="text-[10px] text-slate-500 font-bold uppercase tracking-widest text-center mt-auto">Waiting for file...</div>
+                </div>
+
+                <!-- Step 2: MTD -->
+                <div id="slot-mtd" class="step-card group opacity-50">
+                    <div class="absolute top-4 right-4 text-emerald-400 opacity-0 group-[.ready]:opacity-100 transition-opacity">
+                        <i data-lucide="check-circle" class="w-6 h-6"></i>
+                    </div>
+                    <div class="step-badge">STEP 2</div>
+                    <div class="w-16 h-16 bg-gradient-to-br from-blue-400/20 to-indigo-500/20 rounded-2xl flex items-center justify-center mb-6 group-[.ready]:from-emerald-400/20 group-[.ready]:to-emerald-600/20 transition-all duration-500">
+                        <i data-lucide="calendar" class="w-8 h-8 text-indigo-400 group-[.ready]:text-emerald-400 transition-colors"></i>
+                    </div>
+                    <h3 class="font-bold text-lg mb-2">MTD (นี้)</h3>
+                    <p class="text-xs text-slate-400 mb-6 font-medium">ยอดสะสมเดือนนี้</p>
+                    <div id="status-mtd" class="text-[10px] text-slate-500 font-bold uppercase tracking-widest text-center mt-auto">Waiting for file...</div>
+                </div>
+
+                <!-- Step 3: Today -->
+                <div id="slot-today" class="step-card group opacity-50">
+                    <div class="absolute top-4 right-4 text-emerald-400 opacity-0 group-[.ready]:opacity-100 transition-opacity">
+                        <i data-lucide="check-circle" class="w-6 h-6"></i>
+                    </div>
+                    <div class="step-badge">STEP 3</div>
+                    <div class="w-16 h-16 bg-gradient-to-br from-emerald-400/20 to-teal-500/20 rounded-2xl flex items-center justify-center mb-6 group-[.ready]:from-emerald-400/20 group-[.ready]:to-emerald-600/20 transition-all duration-500">
+                        <i data-lucide="clock" class="w-8 h-8 text-emerald-400 transition-colors"></i>
+                    </div>
+                    <h3 class="font-bold text-lg mb-2">TODAY</h3>
+                    <p class="text-xs text-slate-400 mb-6 font-medium">ยอดขายรายวัน</p>
+                    <div id="status-today" class="text-[10px] text-slate-500 font-bold uppercase tracking-widest text-center mt-auto">Waiting for file...</div>
+                </div>
+
+                <!-- Step 4: Last Month -->
+                <div id="slot-lastmonth" class="step-card group opacity-50">
+                    <div class="absolute top-4 right-4 text-emerald-400 opacity-0 group-[.ready]:opacity-100 transition-opacity">
+                        <i data-lucide="check-circle" class="w-6 h-6"></i>
+                    </div>
+                    <div class="step-badge">STEP 4</div>
+                    <div class="w-16 h-16 bg-gradient-to-br from-rose-400/20 to-pink-500/20 rounded-2xl flex items-center justify-center mb-6 group-[.ready]:from-emerald-400/20 group-[.ready]:to-emerald-600/20 transition-all duration-500">
+                        <i data-lucide="history" class="w-8 h-8 text-rose-400 group-[.ready]:text-emerald-400 transition-colors"></i>
+                    </div>
+                    <h3 class="font-bold text-lg mb-2">LAST MO</h3>
+                    <p class="text-xs text-slate-400 mb-6 font-medium">เดือนที่แล้ว (MOM)</p>
+                    <div id="status-lastmonth" class="text-[10px] text-slate-500 font-bold uppercase tracking-widest text-center mt-auto">Waiting for file...</div>
+                </div>
+
+                <!-- Step 5: Last Year -->
+                <div id="slot-lastyear" class="step-card group opacity-50">
+                    <div class="absolute top-4 right-4 text-emerald-400 opacity-0 group-[.ready]:opacity-100 transition-opacity">
+                        <i data-lucide="check-circle" class="w-6 h-6"></i>
+                    </div>
+                    <div class="step-badge">STEP 5</div>
+                    <div class="w-16 h-16 bg-gradient-to-br from-sky-400/20 to-cyan-500/20 rounded-2xl flex items-center justify-center mb-6 group-[.ready]:from-emerald-400/20 group-[.ready]:to-emerald-600/20 transition-all duration-500">
+                        <i data-lucide="shrink" class="w-8 h-8 text-sky-400 group-[.ready]:text-emerald-400 transition-colors"></i>
+                    </div>
+                    <h3 class="font-bold text-lg mb-2">LAST YR</h3>
+                    <p class="text-xs text-slate-400 mb-6 font-medium">ปีที่แล้ว (YOY)</p>
+                    <div id="status-lastyear" class="text-[10px] text-slate-500 font-bold uppercase tracking-widest text-center mt-auto">Waiting for file...</div>
+                </div>
+            </div>
+
+            <!-- Simplified Action Button -->
+            <div class="mt-12 flex flex-col items-center gap-4">
+                <div id="init-action" class="flex justify-center transition-all duration-500 opacity-50">
+                    <button 
+                        id="gen-btn" 
+                        disabled
+                        class="px-12 py-6 bg-gradient-to-r from-indigo-600 to-rose-600 rounded-2xl font-black text-2xl shadow-2xl transition-all hover:scale-105 active:scale-95 flex items-center gap-4 text-white ring-4 ring-white/20"
+                    >
+                        GENERATE MASTER DASHBOARD
+                        <i data-lucide="zap" class="w-8 h-8 fill-current"></i>
+                    </button>
+                </div>
+                <!-- Auto-Fetch & Debug Actions -->
+                <div class="flex flex-col items-center gap-4">
+                    <button onclick="syncLocalFiles()" class="px-8 py-3 bg-slate-800 hover:bg-slate-700 rounded-xl text-sm transition font-medium border border-white/10 flex items-center gap-2 group">
+                        <i data-lucide="folder-sync" class="w-5 h-5 group-hover:rotate-180 transition-transform duration-500"></i>
+                        Auto-Fetch Local Files
+                    </button>
+                    <button onclick="forceStartDashboard()" class="text-[10px] text-slate-500 hover:text-indigo-400 underline opacity-30 hover:opacity-100 transition">
+                        Panic: Bypass All (Debug Only)
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Floating Panic Button -->
+            <button onclick="forceStartDashboard()" class="fixed bottom-4 right-4 bg-slate-800/50 hover:bg-slate-700 p-2 rounded-full text-[8px] text-slate-500 opacity-20 hover:opacity-100 transition z-[200]">
+                PANIC: BYPASS ALL
+            </button>
+        </div>
+    </div>
+
+    <!-- Master Dashboard View (Initially Hidden) -->
+    <div id="dashboard-view" class="dashboard-container">
+        <aside class="sidebar">
+            <div class="flex items-center gap-3 mb-12">
+                <div class="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center shadow-lg shadow-indigo-500/30">
+                    <i data-lucide="layout-dashboard" class="text-white w-6 h-6"></i>
+                </div>
+                <h1 class="text-xl font-bold tracking-tight">ASM <span class="text-indigo-500">MASTER</span></h1>
+            </div>
+
+            <nav class="flex flex-col gap-2">
+                <div class="nav-item active">
+                    <i data-lucide="bar-chart-3" class="w-5 h-5"></i>
+                    <span>Group Overview</span>
+                </div>
+            </nav>
+
+
+            <div class="mt-auto p-4 bg-white/5 rounded-xl border border-white/10">
+                <p class="text-xs text-slate-400 mb-1">Status</p>
+                <div class="flex items-center gap-2">
+                    <div class="w-2 h-2 bg-emerald-500 rounded-full"></div>
+                    <span class="text-sm font-medium">Local Data Source</span>
+                </div>
+            </div>
+            
+            <button onclick="window.location.reload()" class="mt-4 flex items-center gap-2 text-slate-400 hover:text-white transition text-sm">
+                <i data-lucide="log-out" class="w-4 h-4"></i>
+                Reload Data Hub
+            </button>
+        </aside>
+
+        <main class="flex-1 p-10 overflow-y-auto bg-slate-900/50">
+            <!-- Group Overview View -->
+            <div id="view-overview" class="view-content active">
+            <div class="flex justify-between items-end mb-12">
+                <div>
+                    <h2 class="text-4xl font-bold mb-2">Group Performance</h2>
+                    <p class="text-slate-400">Aggregated insights across <span id="branch-count" class="text-white font-bold">0</span> branches</p>
+                </div>
+            </div>
+
+            <!-- Group Target Summary Bar -->
+            <div id="target-summary-grid" class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-3 mb-10">
+                <!-- Total Target -->
+                <div class="card p-3 border-amber-500/20 bg-amber-500/5 group hover:border-amber-500/40 transition-all flex flex-col justify-between">
+                    <div class="flex items-center justify-between mb-2 text-amber-400">
+                        <div class="flex items-center gap-1.5">
+                            <i data-lucide="target" class="w-4 h-4"></i>
+                            <span class="text-[10px] font-black uppercase tracking-wider">Grand Total</span>
+                        </div>
+                        <span class="text-[9px] font-black bg-amber-500/20 px-1.5 py-0.5 rounded text-amber-300" id="ach-total-pct">0%</span>
+                    </div>
+                    <div class="mb-3">
+                        <p class="text-[9px] text-slate-400 font-bold uppercase tracking-tighter mb-0.5">MTD Actual</p>
+                        <p class="text-base font-bold text-white leading-tight" id="actual-total-revenue">฿0</p>
+                    </div>
+                    <div class="space-y-1.5">
+                        <div class="flex justify-between items-end">
+                            <p class="text-[8px] text-slate-500 font-bold uppercase">Target</p>
+                            <p class="text-[8px] text-slate-300 font-bold" id="total-total-target">฿0</p>
+                        </div>
+                        <div class="w-full bg-slate-800/50 h-1 rounded-full overflow-hidden">
+                            <div id="bar-total-ach" class="bg-amber-500 h-full rounded-full transition-all duration-1000 shadow-[0_0_8px_rgba(245,158,11,0.5)]" style="width: 0%"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Mac -->
+                <div onclick="openCategoryDrilldown('mac', 53)" class="card p-3 border-indigo-500/20 bg-indigo-500/5 group hover:border-indigo-500/40 transition-all flex flex-col justify-between cursor-pointer hover:scale-[1.02] active:scale-[0.98]">
+                    <div class="flex items-center justify-between mb-2 text-indigo-400">
+                        <div class="flex items-center gap-1.5">
+                            <i data-lucide="monitor" class="w-4 h-4"></i>
+                            <span class="text-[10px] font-black uppercase tracking-wider">Mac</span>
+                        </div>
+                        <span class="text-[9px] font-black bg-indigo-500/20 px-1.5 py-0.5 rounded text-indigo-300" id="ach-mac-pct">0%</span>
+                    </div>
+                    <div class="mb-3">
+                        <p class="text-[9px] text-slate-400 font-bold uppercase tracking-tighter mb-0.5">MTD Actual</p>
+                        <p class="text-base font-bold text-white leading-tight" id="actual-mac-revenue">฿0</p>
+                    </div>
+                    <div class="space-y-1.5">
+                        <div class="flex justify-between items-end">
+                            <p class="text-[8px] text-slate-500 font-bold uppercase">Target</p>
+                            <p class="text-[8px] text-slate-300 font-bold" id="total-mac-target">฿0</p>
+                        </div>
+                        <div class="w-full bg-slate-800/50 h-1 rounded-full overflow-hidden">
+                            <div id="bar-mac-ach" class="bg-indigo-500 h-full rounded-full transition-all duration-1000 shadow-[0_0_8px_rgba(99,102,241,0.5)]" style="width: 0%"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- iPad -->
+                <div onclick="openCategoryDrilldown('ipad', 54)" class="card p-3 border-emerald-500/20 bg-emerald-500/5 group hover:border-emerald-500/40 transition-all flex flex-col justify-between cursor-pointer hover:scale-[1.02] active:scale-[0.98]">
+                    <div class="flex items-center justify-between mb-2 text-emerald-400">
+                        <div class="flex items-center gap-1.5">
+                            <i data-lucide="tablet-2" class="w-4 h-4"></i>
+                            <span class="text-[10px] font-black uppercase tracking-wider">iPad</span>
+                        </div>
+                        <span class="text-[9px] font-black bg-emerald-500/20 px-1.5 py-0.5 rounded text-emerald-300" id="ach-ipad-pct">0%</span>
+                    </div>
+                    <div class="mb-3">
+                        <p class="text-[9px] text-slate-400 font-bold uppercase tracking-tighter mb-0.5">MTD Actual</p>
+                        <p class="text-base font-bold text-white leading-tight" id="actual-ipad-revenue">฿0</p>
+                    </div>
+                    <div class="space-y-1.5">
+                        <div class="flex justify-between items-end">
+                            <p class="text-[8px] text-slate-500 font-bold uppercase">Target</p>
+                            <p class="text-[8px] text-slate-300 font-bold" id="total-ipad-target">฿0</p>
+                        </div>
+                        <div class="w-full bg-slate-800/50 h-1 rounded-full overflow-hidden">
+                            <div id="bar-ipad-ach" class="bg-emerald-500 h-full rounded-full transition-all duration-1000 shadow-[0_0_8px_rgba(16,185,129,0.5)]" style="width: 0%"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- iPhone -->
+                <div onclick="openCategoryDrilldown('iphone', 48)" class="card p-3 border-rose-500/20 bg-rose-500/5 group hover:border-rose-500/40 transition-all flex flex-col justify-between cursor-pointer hover:scale-[1.02] active:scale-[0.98]">
+                    <div class="flex items-center justify-between mb-2 text-rose-400">
+                        <div class="flex items-center gap-1.5">
+                            <i data-lucide="smartphone" class="w-4 h-4"></i>
+                            <span class="text-[10px] font-black uppercase tracking-wider">iPhone</span>
+                        </div>
+                        <span class="text-[9px] font-black bg-rose-500/20 px-1.5 py-0.5 rounded text-rose-300" id="ach-iphone-pct">0%</span>
+                    </div>
+                    <div class="mb-3">
+                        <p class="text-[9px] text-slate-400 font-bold uppercase tracking-tighter mb-0.5">MTD Actual</p>
+                        <p class="text-base font-bold text-white leading-tight" id="actual-iphone-revenue">฿0</p>
+                    </div>
+                    <div class="space-y-1.5">
+                        <div class="flex justify-between items-end">
+                            <p class="text-[8px] text-slate-500 font-bold uppercase">Target</p>
+                            <p class="text-[8px] text-slate-300 font-bold" id="total-iphone-target">฿0</p>
+                        </div>
+                        <div class="w-full bg-slate-800/50 h-1 rounded-full overflow-hidden">
+                            <div id="bar-iphone-ach" class="bg-rose-500 h-full rounded-full transition-all duration-1000 shadow-[0_0_8px_rgba(244,63,94,0.5)]" style="width: 0%"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Watch -->
+                <div onclick="openCategoryDrilldown('watch', 72)" class="card p-3 border-cyan-500/20 bg-cyan-500/5 group hover:border-cyan-500/40 transition-all flex flex-col justify-between cursor-pointer hover:scale-[1.02] active:scale-[0.98]">
+                    <div class="flex items-center justify-between mb-2 text-cyan-400">
+                        <div class="flex items-center gap-1.5">
+                            <i data-lucide="watch" class="w-4 h-4"></i>
+                            <span class="text-[10px] font-black uppercase tracking-wider">Watch</span>
+                        </div>
+                        <span class="text-[9px] font-black bg-cyan-500/20 px-1.5 py-0.5 rounded text-cyan-300" id="ach-watch-pct">0%</span>
+                    </div>
+                    <div class="mb-3">
+                        <p class="text-[9px] text-slate-400 font-bold uppercase tracking-tighter mb-0.5">MTD Actual</p>
+                        <p class="text-base font-bold text-white leading-tight" id="actual-watch-revenue">฿0</p>
+                    </div>
+                    <div class="space-y-1.5">
+                        <div class="flex justify-between items-end">
+                            <p class="text-[8px] text-slate-500 font-bold uppercase">Target</p>
+                            <p class="text-[8px] text-slate-300 font-bold" id="total-watch-target">฿0</p>
+                        </div>
+                        <div class="w-full bg-slate-800/50 h-1 rounded-full overflow-hidden">
+                            <div id="bar-watch-ach" class="bg-cyan-500 h-full rounded-full transition-all duration-1000 shadow-[0_0_8px_rgba(6,182,212,0.5)]" style="width: 0%"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 3RD PARTY -->
+                <div onclick="openCategoryDrilldown('3rd', '3RD')" class="card p-3 border-purple-500/20 bg-purple-500/5 group hover:border-purple-500/40 transition-all flex flex-col justify-between cursor-pointer hover:scale-[1.02] active:scale-[0.98]">
+                    <div class="flex items-center justify-between mb-2 text-purple-400">
+                        <div class="flex items-center gap-1.5">
+                            <i data-lucide="shopping-bag" class="w-4 h-4"></i>
+                            <span class="text-[10px] font-black uppercase tracking-wider">3RD Party</span>
+                        </div>
+                        <span class="text-[9px] font-black bg-purple-500/20 px-1.5 py-0.5 rounded text-purple-300" id="ach-3rd-pct">0%</span>
+                    </div>
+                    <div class="mb-3">
+                        <p class="text-[9px] text-slate-400 font-bold uppercase tracking-tighter mb-0.5">MTD Actual</p>
+                        <p class="text-base font-bold text-white leading-tight" id="actual-3rd-revenue">฿0</p>
+                    </div>
+                    <div class="space-y-1.5">
+                        <div class="flex justify-between items-end">
+                            <p class="text-[8px] text-slate-500 font-bold uppercase">Target</p>
+                            <p class="text-[8px] text-slate-300 font-bold" id="total-3rd-target">฿0</p>
+                        </div>
+                        <div class="w-full bg-slate-800/50 h-1 rounded-full overflow-hidden">
+                            <div id="bar-3rd-ach" class="bg-purple-500 h-full rounded-full transition-all duration-1000 shadow-[0_0_8px_rgba(168,85,247,0.5)]" style="width: 0%"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- BTB -->
+                <div onclick="openCategoryDrilldown('btb', 'BTB')" class="card p-3 border-blue-500/20 bg-blue-500/5 group hover:border-blue-500/40 transition-all flex flex-col justify-between cursor-pointer hover:scale-[1.02] active:scale-[0.98]">
+                    <div class="flex items-center justify-between mb-2 text-blue-400">
+                        <div class="flex items-center gap-1.5">
+                            <i data-lucide="briefcase" class="w-4 h-4"></i>
+                            <span class="text-[10px] font-black uppercase tracking-wider">BTB</span>
+                        </div>
+                        <span class="text-[9px] font-black bg-blue-500/20 px-1.5 py-0.5 rounded text-blue-300" id="ach-btb-pct">0%</span>
+                    </div>
+                    <div class="mb-3">
+                        <p class="text-[9px] text-slate-400 font-bold uppercase tracking-tighter mb-0.5">MTD Actual</p>
+                        <p class="text-base font-bold text-white leading-tight" id="actual-btb-revenue">฿0</p>
+                    </div>
+                    <div class="space-y-1.5">
+                        <div class="flex justify-between items-end">
+                            <p class="text-[8px] text-slate-500 font-bold uppercase">Target</p>
+                            <p class="text-[8px] text-slate-300 font-bold" id="total-btb-target">฿0</p>
+                        </div>
+                        <div class="w-full bg-slate-800/50 h-1 rounded-full overflow-hidden">
+                            <div id="bar-btb-ach" class="bg-blue-500 h-full rounded-full transition-all duration-1000 shadow-[0_0_8px_rgba(59,130,246,0.5)]" style="width: 0%"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SIM -->
+                <div onclick="openCategoryDrilldown('sim', 84)" class="card p-3 border-orange-500/20 bg-orange-500/5 group hover:border-orange-500/40 transition-all flex flex-col justify-between cursor-pointer hover:scale-[1.02] active:scale-[0.98]">
+                    <div class="flex items-center justify-between mb-2 text-orange-400">
+                        <div class="flex items-center gap-1.5">
+                            <i data-lucide="radio" class="w-4 h-4"></i>
+                            <span class="text-[10px] font-black uppercase tracking-wider">SIM</span>
+                        </div>
+                        <span class="text-[9px] font-black bg-orange-500/20 px-1.5 py-0.5 rounded text-orange-300" id="ach-sim-pct">0%</span>
+                    </div>
+                    <div class="mb-3">
+                        <p class="text-[9px] text-slate-400 font-bold uppercase tracking-tighter mb-0.5">MTD Actual</p>
+                        <p class="text-base font-bold text-white leading-tight" id="actual-sim-revenue">0</p>
+                    </div>
+                    <div class="space-y-1.5">
+                        <div class="flex justify-between items-end">
+                            <p class="text-[8px] text-slate-500 font-bold uppercase">Target</p>
+                            <p class="text-[8px] text-slate-300 font-bold" id="total-sim-target">0</p>
+                        </div>
+                        <div class="w-full bg-slate-800/50 h-1 rounded-full overflow-hidden">
+                            <div id="bar-sim-ach" class="bg-orange-500 h-full rounded-full transition-all duration-1000 shadow-[0_0_8px_rgba(249,115,22,0.5)]" style="width: 0%"></div>
+                        </div>
+                    </div>
+                </div>
+                </div>
+
+                <!-- Focus & Attach Box -->
+                <div class="col-span-full mt-4">
+                    <div class="card p-6 border-indigo-500/30 bg-indigo-500/5 relative overflow-hidden group">
+                        <div class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                            <i data-lucide="zap" class="w-16 h-16 text-indigo-400"></i>
+                        </div>
+                        
+                        <div class="flex items-center gap-2 mb-6 text-indigo-400">
+                            <i data-lucide="layers" class="w-5 h-5"></i>
+                            <span class="text-xs font-black uppercase tracking-[0.2em]">Focus & Attach Performance</span>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-8 relative z-10">
+                            <!-- Cover+ -->
+                            <div class="space-y-4">
+                                <div class="flex justify-between items-end">
+                                    <div>
+                                        <p class="text-[10px] text-slate-500 font-black uppercase tracking-widest mb-1">Cover+</p>
+                                        <h4 class="text-2xl font-black text-white" id="focus-cover-units">0 <span class="text-[10px] text-slate-500 font-bold uppercase ml-1">Units</span></h4>
+                                    </div>
+                                    <div class="text-right">
+                                        <p class="text-[10px] text-amber-400 font-bold mb-1" id="focus-cover-rev">฿0</p>
+                                        <span class="text-[9px] bg-amber-500/20 text-amber-400 px-2 py-0.5 rounded-full font-black" id="focus-cover-rate">0% ATTACH</span>
+                                    </div>
+                                </div>
+                                <div class="w-full bg-slate-800/50 h-2 rounded-full overflow-hidden">
+                                    <div id="bar-cover-attach" class="bg-amber-500 h-full rounded-full transition-all duration-1000 shadow-[0_0_10px_rgba(245,158,11,0.4)]" style="width: 0%"></div>
+                                </div>
+                            </div>
+
+                            <!-- AC+ -->
+                            <div class="space-y-4 border-x border-white/5 px-8">
+                                <div class="flex justify-between items-end">
+                                    <div>
+                                        <p class="text-[10px] text-slate-500 font-black uppercase tracking-widest mb-1">AppleCare+</p>
+                                        <h4 class="text-2xl font-black text-white" id="focus-ac-units">0 <span class="text-[10px] text-slate-500 font-bold uppercase ml-1">Units</span></h4>
+                                    </div>
+                                    <div class="text-right">
+                                        <p class="text-[10px] text-indigo-400 font-bold mb-1" id="focus-ac-rev">฿0</p>
+                                        <span class="text-[9px] bg-indigo-500/20 text-indigo-400 px-2 py-0.5 rounded-full font-black" id="focus-ac-rate">0% ATTACH</span>
+                                    </div>
+                                </div>
+                                <div class="w-full bg-slate-800/50 h-2 rounded-full overflow-hidden">
+                                    <div id="bar-ac-attach" class="bg-indigo-500 h-full rounded-full transition-all duration-1000 shadow-[0_0_10px_rgba(99,102,241,0.4)]" style="width: 0%"></div>
+                                </div>
+                            </div>
+
+                            <!-- Pencil -->
+                            <div class="space-y-4">
+                                <div class="flex justify-between items-end">
+                                    <div>
+                                        <p class="text-[10px] text-slate-500 font-black uppercase tracking-widest mb-1">Apple Pencil</p>
+                                        <h4 class="text-2xl font-black text-white" id="focus-pencil-units">0 <span class="text-[10px] text-slate-500 font-bold uppercase ml-1">Units</span></h4>
+                                    </div>
+                                    <div class="text-right">
+                                        <p class="text-[10px] text-emerald-400 font-bold mb-1" id="focus-pencil-rev">฿0</p>
+                                        <span class="text-[9px] bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded-full font-black" id="focus-pencil-rate">0% ATTACH</span>
+                                    </div>
+                                </div>
+                                <div class="w-full bg-slate-800/50 h-2 rounded-full overflow-hidden">
+                                    <div id="bar-pencil-attach" class="bg-emerald-500 h-full rounded-full transition-all duration-1000 shadow-[0_0_10px_rgba(16,185,129,0.4)]" style="width: 0%"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Branch Performance Table (Integrated into Overview) -->
+                <div class="col-span-full mt-10" id="branch-performance-section">
+                    <div class="flex items-center justify-between mb-6 px-2">
+                        <div class="flex items-center gap-3">
+                            <div class="w-1.5 h-6 bg-indigo-500 rounded-full"></div>
+                            <h3 class="text-2xl font-black text-white tracking-tight uppercase">Branch Performance Summary</h3>
+                        </div>
+                        <button onclick="captureBranchPerformance()" class="flex items-center gap-2 bg-white/5 hover:bg-white/10 text-indigo-400 hover:text-indigo-300 px-4 py-2 rounded-xl border border-white/10 transition-all hover:scale-105 active:scale-95 group">
+                            <i data-lucide="camera" class="w-4 h-4 group-hover:rotate-12 transition-transform"></i>
+                            <span class="text-xs font-black uppercase tracking-widest">Capture Table</span>
+                        </button>
+                    </div>
+
+                    <div class="card p-0 overflow-hidden border-white/10 bg-slate-900/40">
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left border-collapse">
+                                <thead>
+                                    <tr class="bg-white/5 border-b border-white/10">
+                                        <th class="p-5 text-[10px] font-black uppercase tracking-widest text-slate-500">Branch Name</th>
+                                        <th class="p-5 text-[10px] font-black uppercase tracking-widest text-slate-500 text-right">Target</th>
+                                        <th class="p-5 text-[10px] font-black uppercase tracking-widest text-slate-500 text-right">Actual</th>
+                                        <th class="p-5 text-[10px] font-black uppercase tracking-widest text-slate-500 text-center">Ach %</th>
+                                        <th class="p-5 text-[10px] font-black uppercase tracking-widest text-indigo-400 text-center">P-Score</th>
+                                        <th class="p-5 text-[10px] font-black uppercase tracking-widest text-emerald-400 text-right">Daily Req.</th>
+                                        <th class="p-5 text-[10px] font-black uppercase tracking-widest text-slate-500 text-right">MoM %</th>
+                                        <th class="p-5 text-[10px] font-black uppercase tracking-widest text-slate-500 text-right">YoY %</th>
+                                        <th class="p-5 text-[10px] font-black uppercase tracking-widest text-slate-500 text-right">Forecast</th>
+                                        <th class="p-5 text-[10px] font-black uppercase tracking-widest text-slate-500 text-right">Diff (฿)</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="comparison-table-body">
+                                    <tr class="animate-pulse">
+                                        <td colspan="7" class="p-10 text-center text-slate-500 text-sm italic">
+                                            Waiting for data synchronization...
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div> <!-- End view-overview -->
+        </main>
+    </div>
+
+    <script>
+        lucide.createIcons();
+
+        // Global Helpers
+        function setVal(id, val) {
+            const el = document.getElementById(id);
+            if (el) el.innerText = val;
+        }
+
+        // Data structure to hold data from all 5 slots
+        let masterSession = {
+            target: [],
+            mtd: [],
+            today: [],
+            lastmonth: [],
+            lastyear: []
+        };
+        
+        let charts = {};
+
+        function triggerFileInput(slotId) {
+            document.getElementById(`file-${slotId}`).click();
+        }
+
+        async function handleFiles(files, slotId) {
+            if (files.length === 0) return;
+            
+            const slotEl = document.getElementById(`slot-${slotId}`);
+            const statusEl = document.getElementById(`status-${slotId}`);
+            const file = files[0];
+            
+            // UI Feedback
+            statusEl.innerHTML = `<span class="text-indigo-400 font-bold">Uploading...</span>`;
+            
+            try {
+                const data = await parseExcelFile(file, slotId);
+                
+                if (data.length === 0) {
+                    statusEl.innerHTML = `<span class="text-amber-400 font-bold">No Data Found</span>`;
+                    alert(`ไม่พบข้อมูลในไฟล์ ${file.name} ครับ \nกรุณาตรวจสอบว่ามีหัวข้อ (Headers) หรือข้อมูลในคอลัมน์ที่กำหนดหรือไม่ครับ`);
+                    return;
+                }
+
+                masterSession[slotId] = data;
+                
+                // Success Feedback
+                slotEl.classList.add('ready');
+                statusEl.innerHTML = `<span class="text-emerald-400 font-bold flex items-center gap-1 justify-center bg-emerald-500/20 px-2 py-1 rounded-lg">
+                    <i data-lucide="check-circle" class="w-3 h-3"></i> ${data.length} Rows Ready
+                </span>`;
+                lucide.createIcons();
+                
+                checkReadiness();
+            } catch (err) {
+                console.error(err);
+                statusEl.innerHTML = `<span class="text-rose-400 font-bold">Error</span>`;
+                alert("เกิดข้อผิดพลาดในการอ่านไฟล์: " + err.message);
+            }
+        }
+        
+        // --- Auto-Fetch Logic (Localhost) ---
+        async function fetchLocalExcel(filename, slotId) {
+            try {
+                const response = await fetch(`/public/File/${filename}`);
+                if (!response.ok) throw new Error(`File ${filename} not found in /public/File/`);
+                
+                const arrayBuffer = await response.arrayBuffer();
+                const file = new File([arrayBuffer], filename, { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+                
+                // Simulate the file input handler logic
+                const slotEl = document.getElementById(`slot-${slotId}`);
+                const statusEl = document.getElementById(`status-${slotId}`);
+                
+                statusEl.innerHTML = `<span class="text-indigo-400 font-bold">Parsing...</span>`;
+                const data = await parseExcelFile(file, slotId);
+                
+                if (data.length > 0) {
+                    masterSession[slotId] = data;
+                    slotEl.classList.add('ready');
+                    statusEl.innerHTML = `<span class="text-emerald-400 font-bold flex items-center gap-1 justify-center bg-emerald-500/20 px-2 py-1 rounded-lg">
+                        <i data-lucide="check-circle" class="w-3 h-3"></i> ${data.length} Rows Ready
+                    </span>`;
+                    return true;
+                }
+                return false;
+            } catch (err) {
+                console.warn(`[Auto-Fetch] Skipping ${filename}:`, err.message);
+                return false;
+            }
+        }
+
+        async function syncLocalFiles() {
+            const overlay = document.getElementById('loading-overlay');
+            overlay.style.display = 'flex';
+            document.querySelector('#loading-overlay h2').innerText = "FETCHING LOCAL FILES";
+            
+            // Map slots to pre-defined file names
+            const mappings = [
+                { slot: 'target', file: 'target March.xlsx' },
+                { slot: 'mtd', file: '1856MTD.xlsx' },
+                { slot: 'today', file: '1856Today.xlsx' },
+                { slot: 'lastmonth', file: '1856FEB2026.xlsx' },
+                { slot: 'lastyear', file: '1856FEB2025.xlsx' }
+            ];
+
+            let count = 0;
+            for (const m of mappings) {
+                const success = await fetchLocalExcel(m.file, m.slot);
+                if (success) count++;
+            }
+
+            checkReadiness();
+            lucide.createIcons();
+            
+            setTimeout(() => {
+                overlay.style.display = 'none';
+                document.querySelector('#loading-overlay h2').innerText = "SYNCHRONIZING DATA";
+                if (count > 0) {
+                    alert(`Auto-fetched ${count} files successfully!`);
+                } else {
+                    alert("No local files found in /public/File/. Please ensure files are placed in the correct directory.");
+                }
+            }, 500);
+        }
+
+        async function handleBulkUpload(event) {
+            const files = Array.from(event.target.files);
+            if (files.length === 0) return;
+
+            const overlay = document.getElementById('loading-overlay');
+            overlay.style.display = 'flex';
+            document.querySelector('#loading-overlay h2').innerText = "SMART ANALYZING FILES";
+
+            for (const file of files) {
+                const filename = file.name.toUpperCase();
+                let slotId = null;
+
+                // Smart Detection Logic
+                if (filename.includes('TARGET')) {
+                    slotId = 'target';
+                } else if (filename.includes('MTD')) {
+                    slotId = 'mtd';
+                } else if (filename.includes('TODAY')) {
+                    slotId = 'today';
+                } else if (filename.includes('FEB2026') || filename.includes('FEBRUARY2026')) {
+                    slotId = 'lastmonth';
+                } else if (filename.includes('FEB2025') || filename.includes('FEBRUARY2025')) {
+                    slotId = 'lastyear';
+                }
+
+                if (slotId) {
+                    const statusEl = document.getElementById(`status-${slotId}`);
+                    statusEl.innerHTML = `<span class="text-indigo-400 font-bold">Parsing...</span>`;
+                    
+                    try {
+                        const data = await parseExcelFile(file, slotId);
+                        if (data && data.length > 0) {
+                            masterSession[slotId] = data;
+                            const slotEl = document.getElementById(`slot-${slotId}`);
+                            slotEl.classList.remove('opacity-50');
+                            slotEl.classList.add('ready');
+                            statusEl.innerHTML = `<span class="text-emerald-400 font-bold flex items-center gap-1 justify-center bg-emerald-500/20 px-2 py-1 rounded-lg">
+                                <i data-lucide="check-circle" class="w-3 h-3"></i> ${data.length} Rows
+                            </span>`;
+                        }
+                    } catch (err) {
+                        console.error(`Error parsing ${file.name}:`, err);
+                        statusEl.innerHTML = `<span class="text-rose-500 text-[8px]">Error</span>`;
+                    }
+                }
+            }
+
+            checkReadiness();
+            lucide.createIcons();
+            
+            setTimeout(() => {
+                overlay.style.display = 'none';
+                document.querySelector('#loading-overlay h2').innerText = "SYNCHRONIZING DATA";
+            }, 500);
+        }
+
+        async function parseExcelFile(file, slotId) {
+            const data = await file.arrayBuffer();
+            const workbook = XLSX.read(new Uint8Array(data), { type: 'array' });
+            const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+            
+            // For target and mtd, use letter headers to be precise
+            const options = (slotId === 'target' || slotId === 'mtd') ? { header: 'A' } : {};
+            const json = XLSX.utils.sheet_to_json(firstSheet, options);
+            
+            console.log(`[DEBUG] Raw JSON (${slotId}):`, json.slice(0, 5)); // Log first 5 rows
+            
+            if (!json || json.length === 0) return [];
+
+            if (slotId === 'target') {
+                const results = json.map(row => {
+                    const id = String(row['B'] || '').trim();
+                    const name = String(row['C'] || '').trim();
+                    if (!id && !name) return null;
+                    
+                    return {
+                        id: id,
+                        name: name,
+                        target: parseFloat(String(row['K'] || '0').replace(/[^0-9.-]+/g, "")) || 0,
+                        macTarget: parseFloat(String(row['L'] || '0').replace(/[^0-9.-]+/g, "")) || 0,
+                        ipadTarget: parseFloat(String(row['M'] || '0').replace(/[^0-9.-]+/g, "")) || 0,
+                        iphoneTarget: parseFloat(String(row['N'] || '0').replace(/[^0-9.-]+/g, "")) || 0,
+                        watchTarget: parseFloat(String(row['O'] || '0').replace(/[^0-9.-]+/g, "")) || 0,
+                        thirdPartyTarget: parseFloat(String(row['P'] || '0').replace(/[^0-9.-]+/g, "")) || 0,
+                        btbTarget: parseFloat(String(row['Q'] || '0').replace(/[^0-9.-]+/g, "")) || 0,
+                        simTarget: parseFloat(String(row['W'] || '0').replace(/[^0-9.-]+/g, "")) || 0
+                    };
+                }).filter(r => r !== null && r.name && r.name !== 'Unknown' && r.name !== 'undefined' && r.name !== 'ชื่อสาขา' && r.name !== 'Name' && r.id !== 'BranchID');
+                
+                console.log(`[DEBUG] Parsed ${results.length} targets.`, results.slice(0, 3));
+                return results;
+            }
+
+            if (slotId === 'mtd') {
+                const results = json.map(row => {
+                    const branchName = String(row['J'] || '').trim();
+                    const revenue = parseFloat(String(row['E'] || '0').replace(/[^0-9.-]+/g, "")) || 0;
+                    const productCode = String(row['I'] || '').trim();
+                    const branchId = String(row['N'] || '').trim();
+                    const productGroup = String(row['K'] || '').trim();
+                    const productDetail = String(row['M'] || '').trim();
+                    
+                    const brand = String(row['L'] || '').trim();
+                    const units = parseInt(String(row['C'] || '0').replace(/[^0-9.-]+/g, "")) || 0;
+                    
+                    if (!branchName && !productCode) return null;
+                    
+                    return {
+                        name: branchName,
+                        revenue: revenue,
+                        productCode: productCode,
+                        units: units,
+                        branchId: branchId,
+                        productGroup: productGroup,
+                        productDetail: productDetail,
+                        brand: brand,
+                        skuCode: String(row['A'] || '').trim(),
+                        skuName: String(row['B'] || '').trim(),
+                        // Raw columns for focus metrics
+                        colI: productCode,
+                        colJ: branchName,
+                        colK: productGroup,
+                        colM: productDetail
+                    };
+                }).filter(r => r !== null && r.name && r.name !== 'ชื่อสาขา' && r.name !== 'ชื่อร้าน');
+                
+                console.log(`[DEBUG] Parsed ${results.length} MTD raw records with drill-down and focus data.`, results.slice(0, 3));
+                return results;
+            }
+
+            return json.map(row => {
+                const keys = Object.keys(row);
+                const findValue = (searchTerms) => {
+                    const key = keys.find(k => searchTerms.some(term => String(k).toLowerCase().includes(term.toLowerCase())));
+                    return key ? row[key] : null;
+                };
+
+                const name = findValue(['name', 'branch', 'สาขา', 'ชื่อ', 'store', 'shop', 'location']) || 'Unknown';
+                const revenue = findValue(['revenue', 'sales', 'ยอดขาย', 'ยอด', 'net', 'amount', 'total']) || 0;
+                const target = findValue(['target', 'เป้าหมาย', 'เป้า', 'goal', 'plan']) || 0;
+                const manager = findValue(['manager', 'ผู้จัดการ', 'ดูแล', 'mgr', 'staff']) || '-';
+                const id = findValue(['id', 'ไอดี', 'code', 'รหัส', 'no']) || Math.random().toString(36).substr(2, 5);
+
+                return {
+                    id: String(id).trim(),
+                    name: String(name).trim(),
+                    revenue: parseFloat(String(revenue).replace(/[^0-9.-]+/g, "")) || 0,
+                    target: parseFloat(String(target).replace(/[^0-9.-]+/g, "")) || 0,
+                    manager: String(manager).trim()
+                };
+            }).filter(r => r.name !== 'Unknown' && r.name !== '');
+        }
+
+        // Initialize Event Listeners
+        window.addEventListener('DOMContentLoaded', () => {
+            const genBtn = document.getElementById('gen-btn');
+            if (genBtn) {
+                genBtn.addEventListener('click', (e) => {
+                    console.log("Direct Button Click Captured");
+                    initializeDashboard();
+                });
+            }
+        });
+
+        function checkReadiness() {
+            const targetData = masterSession.target || [];
+            const mtdData = masterSession.mtd || [];
+            const isReady = targetData.length > 0 && mtdData.length > 0;
+            
+            const actionContainer = document.getElementById('init-action');
+            const genBtn = document.getElementById('gen-btn');
+            
+            console.log("Readiness Update:", { isReady, target: targetData.length, mtd: mtdData.length });
+
+            if (isReady) {
+                actionContainer.classList.remove('opacity-50');
+                genBtn.disabled = false;
+                genBtn.classList.add('animate-pulse');
+            } else {
+                actionContainer.classList.add('opacity-50');
+                genBtn.disabled = true;
+                genBtn.classList.remove('animate-pulse');
+            }
+        }
+
+        function forceStartDashboard() {
+            console.warn("Panic: Forcing Dashboard Start with Rich Mock Data");
+            masterSession.target = [
+                { id: '114', name: 'Iconsiam', target: 50000000, macTarget: 10000000, ipadTarget: 8000000, iphoneTarget: 25000000, watchTarget: 5000000, manager: 'Alex' },
+                { id: '115', name: 'Siam Paragon', target: 60000000, macTarget: 12000000, ipadTarget: 10000000, iphoneTarget: 30000000, watchTarget: 6000000, manager: 'Jane' }
+            ];
+            masterSession.mtd = [
+                { name: 'Iconsiam', branchId: '114', revenue: 1200000, productCode: '53', productGroup: 'MacBook Air', productDetail: 'M3 13-inch 8/256GB', brand: 'APPLE' },
+                { name: 'Iconsiam', branchId: '114', revenue: 1500000, productCode: '53', productGroup: 'MacBook Pro', productDetail: 'M3 Pro 14-inch', brand: 'APPLE' },
+                { name: 'Siam Paragon', branchId: '115', revenue: 2000000, productCode: '53', productGroup: 'MacBook Pro', productDetail: 'M3 Max 16-inch', brand: 'APPLE' },
+                { name: 'Iconsiam', branchId: '114', revenue: 800000, productCode: '48', productGroup: 'iPhone 15', productDetail: 'Blue 128GB', brand: 'APPLE' },
+                { name: 'Siam Paragon', branchId: '115', revenue: 1500, productCode: '84', productGroup: 'SIM', productDetail: 'TrueMove H', brand: 'TRUE' },
+                { name: 'Iconsiam', branchId: '114', revenue: 50000, productCode: '10', productGroup: 'BTB Test', productDetail: 'Apple BTB Item', brand: 'APPLE' },
+                { name: 'Siam Paragon', branchId: '115', revenue: 75000, productCode: '20', productGroup: '3RD Test', productDetail: 'Logitech Mouse', brand: 'LOGITECH' }
+            ];
+            masterSession.lastmonth = masterSession.target.map(t => ({ ...t, revenue: t.target * 0.9 }));
+            masterSession.lastyear = masterSession.target.map(t => ({ ...t, revenue: t.target * 0.8 }));
+            initializeDashboard();
+        }
+
+        function initializeDashboard() {
+            const overlay = document.getElementById('loading-overlay');
+            overlay.style.display = 'flex';
+            
+            console.log("Showing loading overlay...");
+
+            // Give the browser a frame to render the overlay before we block the UI thread with processing
+            setTimeout(() => {
+                try {
+                    console.log("Initializing Dashboard Logic...");
+                    
+                    const uploadHub = document.getElementById('upload-hub');
+                    const dashboardView = document.getElementById('dashboard-view');
+                    
+                    // Nuclear Transition
+                    uploadHub.classList.add('hidden');
+                    uploadHub.style.display = 'none';
+                    
+                    dashboardView.style.display = 'grid';
+                    dashboardView.classList.add('active');
+                    
+                    // Heavy Processing
+                    updateDashboardMetrics();
+                    
+                    // Heavy UI render (Icons)
+                    setTimeout(() => {
+                        switchView('overview'); // Ensure default view is showing
+                        lucide.createIcons();
+                        overlay.style.display = 'none'; // Done!
+                        console.log("Success: Dashboard Created.");
+                    }, 100);
+
+                } catch (err) {
+                    overlay.style.display = 'none';
+                    console.error("Dashboard Init Error:", err);
+                    alert("เกิดข้อผิดพลาดในการเริ่มต้น Dashboard: " + err.message);
+                }
+            }, 100);
+        }
+
+        window.updateDashboardMetrics = function(filterBranch = 'all') {
+            const { target, mtd } = masterSession;
+            
+            // Handle 'all', a single branch name (string), or a list of branch names (array)
+            const isMatch = (name) => {
+                if (filterBranch === 'all') return true;
+                if (Array.isArray(filterBranch)) return filterBranch.includes(name);
+                return name === filterBranch;
+            };
+
+            // 1. Filtering MTD Raw Data
+            const filteredMtdRaw = mtd.filter(m => isMatch(m.name));
+
+            // 2. Category Actuals Calculation (Product Codes: iPhone=48, Mac=53, iPad=54, Watch=72, SIM=84)
+            const getActualByCode = (code) => filteredMtdRaw
+                .filter(m => m.productCode === String(code))
+                .reduce((sum, r) => sum + r.revenue, 0);
+
+            const actualTotal = filteredMtdRaw.reduce((sum, r) => sum + r.revenue, 0);
+            const actualMac = getActualByCode(53);
+            const actualIpad = getActualByCode(54);
+            const actualIphone = getActualByCode(48);
+            const actualWatch = getActualByCode(72);
+            
+            // SIM Logic: Use Column C (Units) instead of Revenue (Column E)
+            const actualSim = filteredMtdRaw
+                .filter(m => m.productCode === '84')
+                .reduce((sum, r) => sum + r.units, 0);
+            
+            // 3RD Logic: (Brand != APPLE) AND (Code NOT IN {38, 41, 84, 64, 51})
+            const exclude3rd = ['38', '41', '84', '64', '51'];
+            const actual3rd = filteredMtdRaw
+                .filter(m => (m.brand || '').toUpperCase() !== 'APPLE' && !exclude3rd.includes(m.productCode))
+                .reduce((sum, r) => sum + r.revenue, 0);
+
+            // BTB Logic: (Brand == APPLE) AND (Code NOT IN {72, 48, 53, 54})
+            const mainHardware = ['72', '48', '53', '54'];
+            const actualBtb = filteredMtdRaw
+                .filter(m => (m.brand || '').toUpperCase() === 'APPLE' && !mainHardware.includes(m.productCode))
+                .reduce((sum, r) => sum + r.revenue, 0);
+
+            // 3. Target Data Filtering & Aggregation
+            const filteredTarget = target.filter(t => isMatch(t.name));
+
+            const sumField = (arr, field) => arr.reduce((sum, b) => sum + (b[field] || 0), 0);
+            
+            const tarTotal = sumField(filteredTarget, 'target');
+            const tarMac = sumField(filteredTarget, 'macTarget');
+            const tarIpad = sumField(filteredTarget, 'ipadTarget');
+            const tarIphone = sumField(filteredTarget, 'iphoneTarget');
+            const tarWatch = sumField(filteredTarget, 'watchTarget');
+            const tar3rd = sumField(filteredTarget, 'thirdPartyTarget');
+            const tarBtb = sumField(filteredTarget, 'btbTarget');
+            const tarSim = sumField(filteredTarget, 'simTarget');
+
+            // 4. UI Update Helper
+
+            const updateCard = (idPrefix, actual, targetVal, isUnit = false) => {
+                const actualEl = document.getElementById(`actual-${idPrefix}-revenue`);
+                const targetEl = document.getElementById(`total-${idPrefix}-target`);
+                const pctEl = document.getElementById(`ach-${idPrefix}-pct`);
+                const barEl = document.getElementById(`bar-${idPrefix}-ach`);
+                
+                const fmt = isUnit ? formatUnit : formatVal;
+                
+                if (actualEl) actualEl.innerText = fmt(actual);
+                if (targetEl) targetEl.innerText = fmt(targetVal);
+                
+                const pct = targetVal > 0 ? Math.round((actual / targetVal) * 100) : 0;
+                if (pctEl) {
+                    pctEl.innerText = `${pct}%`;
+                    pctEl.className = `text-[9px] font-black px-1.5 py-0.5 rounded ${pct >= 100 ? 'bg-emerald-500/20 text-emerald-400' : 'bg-indigo-500/20 text-indigo-300'}`;
+                }
+                if (barEl) {
+                    barEl.style.width = `${Math.min(pct, 100)}%`;
+                    if (pct >= 100) barEl.classList.add('bg-emerald-500');
+                }
+            };
+
+            // Update All Cards
+            updateCard('total', actualTotal, tarTotal);
+            updateCard('mac', actualMac, tarMac);
+            updateCard('ipad', actualIpad, tarIpad);
+            updateCard('iphone', actualIphone, tarIphone);
+            updateCard('watch', actualWatch, tarWatch);
+            updateCard('3rd', actual3rd, tar3rd);
+            updateCard('btb', actualBtb, tarBtb);
+            updateCard('sim', actualSim, tarSim, true);
+
+            // 5. Total Calculations & Header Metrics
+            setVal('branch-count', filterBranch === 'all' ? target.length : 1);
+            setVal('actual-total-revenue', formatVal(actualTotal));
+            setVal('total-target-all', formatVal(tarTotal));
+            
+            const totalAchRate = tarTotal > 0 ? (actualTotal / tarTotal) * 100 : 0;
+            setVal('ach-total-pct', `${Math.round(totalAchRate)}%`);
+            
+            const progressEl = document.getElementById('bar-total-ach');
+            if (progressEl) progressEl.style.width = `${Math.min(totalAchRate, 100)}%`;
+
+            // 6. Branch Comparison Table Logic
+            renderBranchComparisonTable();
+
+            // 6. Focus & Attach Calculations
+            let focusCover = { units: 0, rev: 0 };
+            let focusAC = { units: 0, rev: 0 };
+            let focusPencil = { units: 0, rev: 0 };
+            
+            let hardwareUnits = 0; // Mac, iPad, iPhone, Watch
+            let ipadUnits = 0;
+
+            filteredMtdRaw.forEach(r => {
+                const pCode = String(r.productCode);
+                const isMajor = ['53', '54', '48', '72'].includes(pCode);
+                const isIpad = pCode === '54';
+                
+                if (isMajor) hardwareUnits += (r.units || 0);
+                if (isIpad) ipadUnits += (r.units || 0);
+
+                // Logic: Cover+ (I=41, A contains "Coverplus")
+                if (r.colI === '41' && String(r.skuCode).toUpperCase().includes('COVERPLUS')) {
+                    focusCover.units += (r.units || 0);
+                    focusCover.rev += (r.revenue || 0);
+                }
+                // Logic: AC+ (I=49, J contains "Apple Care")
+                if (r.colI === '49' && String(r.colJ).toUpperCase().includes('APPLE CARE')) {
+                    focusAC.units += (r.units || 0);
+                    focusAC.rev += (r.revenue || 0);
+                }
+                // Logic: Pencil (I=51, M contains "Pencil")
+                if (r.colI === '51' && String(r.colM).toUpperCase().includes('PENCIL')) {
+                    focusPencil.units += (r.units || 0);
+                    focusPencil.rev += (r.revenue || 0);
+                }
+            });
+
+            // Update Focus UI
+            setVal('focus-cover-units', focusCover.units.toLocaleString());
+            setVal('focus-cover-rev', formatVal(focusCover.rev));
+            document.getElementById('bar-cover-attach').style.width = focusCover.units > 0 ? '100%' : '0%';
+
+            setVal('focus-ac-units', focusAC.units.toLocaleString());
+            setVal('focus-ac-rev', formatVal(focusAC.rev));
+            const acRate = hardwareUnits > 0 ? (focusAC.units / hardwareUnits * 100) : 0;
+            setVal('focus-ac-rate', `${acRate.toFixed(1)}% ATTACH`);
+            document.getElementById('bar-ac-attach').style.width = `${Math.min(acRate * 4, 100)}%`; // Scaled for UI visibility
+
+            setVal('focus-pencil-units', focusPencil.units.toLocaleString());
+            setVal('focus-pencil-rev', formatVal(focusPencil.rev));
+            const pencilRate = ipadUnits > 0 ? (focusPencil.units / ipadUnits * 100) : 0;
+            setVal('focus-pencil-rate', `${pencilRate.toFixed(1)}% ATTACH`);
+            document.getElementById('bar-pencil-attach').style.width = `${Math.min(pencilRate, 100)}%`;
+
+            // 7. Title Update
+            const titleEl = document.querySelector('h2.text-4xl');
+            if (titleEl) titleEl.innerText = filterBranch === 'all' ? 'Group Performance' : 'Branch Performance';
+        }
+
+
+        /* --- Category Drill-down Logic --- */
+        function formatDrilldownValue(val, catName) {
+            if (catName === 'sim') return val.toLocaleString();
+            const absV = Math.abs(val);
+            if (absV >= 1000000) return `฿${(val/1000000).toFixed(1)}M`;
+            if (absV >= 1000) return `฿${Math.round(val/1000)}k`;
+            return `฿${val.toLocaleString()}`;
+        }
+
+        function toggleProductDetails(groupId) {
+            const el = document.getElementById(`details-${groupId}`);
+            const icon = document.getElementById(`icon-${groupId}`);
+            if (el) {
+                const isExpanded = el.classList.contains('expanded');
+                // Close all others first (optional, but cleaner)
+                // document.querySelectorAll('.product-details').forEach(d => d.classList.remove('expanded'));
+                // document.querySelectorAll('.rotate-icon').forEach(i => i.classList.remove('expanded'));
+                
+                el.classList.toggle('expanded');
+                if (icon) icon.classList.toggle('expanded');
+            }
+        }
+
+        let currentDrilldownData = [];
+        let currentDrilldownCat = '';
+
+        function openCategoryDrilldown(catName, catCode) {
+            const modal = document.getElementById('category-drilldown-modal');
+            const { mtd } = masterSession;
+            
+            if (!mtd || mtd.length === 0) {
+                console.warn("No MTD data loaded for drill-down.");
+                return;
+            }
+
+            currentDrilldownCat = catName;
+            
+            if (catName === 'btb') {
+                const mainHardware = ['72', '48', '53', '54'];
+                currentDrilldownData = mtd.filter(m => (m.brand || '').toUpperCase() === 'APPLE' && !mainHardware.includes(m.productCode));
+            } else if (catName === '3rd') {
+                const exclude3rd = ['38', '41', '84', '64', '51'];
+                currentDrilldownData = mtd.filter(m => (m.brand || '').toUpperCase() !== 'APPLE' && !exclude3rd.includes(m.productCode));
+            } else {
+                currentDrilldownData = mtd.filter(m => String(m.productCode) === String(catCode));
+            }
+            
+            renderDrilldownContent('all');
+
+            if (modal) {
+                modal.classList.add('active');
+                modal.style.display = 'flex';
+            }
+            lucide.createIcons();
+        }
+
+        function renderDrilldownContent(targetBranchId = 'all') {
+            const rawData = currentDrilldownData;
+            const catName = currentDrilldownCat;
+            const isSim = catName === 'sim';
+            
+            // Use units for SIM, revenue for others
+            const totalMetric = rawData.reduce((sum, r) => sum + (isSim ? r.units : r.revenue), 0);
+
+            // 1. Branch Aggregation
+            const branchMap = {};
+            rawData.forEach(r => {
+                const key = r.branchId || r.name;
+                if (!branchMap[key]) {
+                    branchMap[key] = { id: r.branchId, name: r.name, revenue: 0, units: 0 };
+                }
+                branchMap[key].revenue += r.revenue;
+                branchMap[key].units += (r.units || 0); // Use parsed units column
+            });
+
+            // 2. Product Aggregation (Filtered)
+            const displayData = targetBranchId === 'all' 
+                ? rawData 
+                : rawData.filter(r => (r.branchId || r.name) === targetBranchId);
+
+            const groupMap = {};
+            displayData.forEach(r => {
+                const key = r.productGroup || 'Unknown Model';
+                if (!groupMap[key]) groupMap[key] = { name: key, revenue: 0, units: 0, details: {} };
+                groupMap[key].revenue += r.revenue;
+                groupMap[key].units += (r.units || 0);
+                
+                const detailKey = r.productDetail || 'Standard';
+                if (!groupMap[key].details[detailKey]) groupMap[key].details[detailKey] = { revenue: 0, units: 0 };
+                groupMap[key].details[detailKey].revenue += r.revenue;
+                groupMap[key].details[detailKey].units += (r.units || 0);
+            });
+
+            // UI
+            setVal('drilldown-title', `${catName.toUpperCase()} Deep Dive`);
+            setVal('drilldown-subtitle', targetBranchId === 'all' ? 'Group Performance Analysis' : `Branch: ${branchMap[targetBranchId]?.name || targetBranchId}`);
+            setVal('drilldown-total-val', formatDrilldownValue(totalMetric, catName));
+            setVal('drilldown-total-branches', Object.keys(branchMap).length);
+
+            // Branch List
+            const branchList = document.getElementById('drilldown-branch-list');
+            if (branchList) {
+                branchList.innerHTML = Object.values(branchMap)
+                    .sort((a,b) => b.revenue - a.revenue)
+                    .map(b => {
+                        const bId = b.id || b.name;
+                        const bMetric = isSim ? b.units : b.revenue;
+                        const pct = totalMetric > 0 ? (bMetric / totalMetric) * 100 : 0;
+                        const isActive = bId === targetBranchId;
+                        return `
+                            <div class="drilldown-list-item cursor-pointer ${isActive ? 'active' : ''}" onclick="renderDrilldownContent('${bId}')">
+                                <div class="flex justify-between items-start mb-2">
+                                    <div>
+                                        <p class="font-bold text-white text-sm">${b.name}</p>
+                                        <div class="flex items-center gap-2 mt-0.5">
+                                            <p class="text-[9px] text-slate-500 font-bold uppercase tracking-tight">${b.id}</p>
+                                            <span class="text-[9px] bg-slate-800 text-slate-400 px-1.5 py-0.5 rounded font-black">${b.units} UNITS</span>
+                                        </div>
+                                    </div>
+                                    <div class="text-right">
+                                        <span class="text-xs font-black text-indigo-400 block">${totalMetric > 0 ? ((isSim ? b.units : b.revenue) / totalMetric * 100).toFixed(1) : 0}%</span>
+                                        <span class="text-[10px] text-slate-500 font-bold">${formatDrilldownValue(isSim ? b.units : b.revenue, catName)}</span>
+                                    </div>
+                                </div>
+                                <div class="w-full bg-white/5 h-1 rounded-full overflow-hidden">
+                                    <div class="bg-indigo-500 h-full rounded-full" style="width: ${pct}%"></div>
+                                </div>
+                            </div>
+                        `;
+                    }).join('');
+            }
+
+            // Product List
+            const productList = document.getElementById('drilldown-product-list');
+            if (productList) {
+                if (Object.keys(groupMap).length === 0) {
+                    productList.innerHTML = `<div class="p-8 text-center text-slate-500 italic">No specific models recorded for this selection.</div>`;
+                } else {
+                    productList.innerHTML = Object.values(groupMap)
+                        .sort((a,b) => (isSim ? b.units - a.units : b.revenue - a.revenue))
+                        .map((g, idx) => {
+                            const groupId = `item-${idx}`;
+                            const gMetric = isSim ? g.units : g.revenue;
+                            const pct = totalMetric > 0 ? (gMetric / totalMetric) * 100 : 0;
+                            const detailsHtml = Object.entries(g.details)
+                                .sort((a,b) => (isSim ? b[1].units - a[1].units : b[1].revenue - a[1].revenue))
+                                .map(([name, data]) => {
+                                    const dMetric = isSim ? data.units : data.revenue;
+                                    const dPct = gMetric > 0 ? (dMetric / gMetric) * 100 : 0;
+                                    return `
+                                        <div class="flex justify-between items-center mt-2 pl-4 border-l border-white/10 cursor-pointer group/item hover:bg-white/5 p-1 rounded transition-colors" onclick="openSkuDrilldown('${name}')">
+                                            <div class="flex items-center gap-2">
+                                                <p class="text-[10px] text-slate-400 font-medium group-hover/item:text-indigo-300">${name}</p>
+                                                <i data-lucide="external-link" class="w-2.5 h-2.5 text-slate-600 opacity-0 group-hover/item:opacity-100 transition-opacity"></i>
+                                            </div>
+                                            <div class="flex items-center gap-2">
+                                                <p class="text-[9px] text-slate-500 font-bold">${dPct.toFixed(0)}%</p>
+                                                <p class="text-[10px] text-emerald-400/80 font-bold">${formatDrilldownValue(dMetric, catName)}</p>
+                                            </div>
+                                        </div>
+                                    `;
+                                }).join('');
+
+                            return `
+                                <div class="drilldown-list-item">
+                                    <div class="flex justify-between items-center mb-2 cursor-pointer group" onclick="toggleProductDetails('${groupId}')">
+                                        <div class="flex items-center gap-2">
+                                            <p class="font-bold text-white text-sm">${g.name}</p>
+                                            <i data-lucide="chevron-down" id="icon-${groupId}" class="w-3.5 h-3.5 text-slate-500 group-hover:text-white rotate-icon"></i>
+                                        </div>
+                                        <span class="text-xs font-black text-emerald-400">${pct.toFixed(1)}%</span>
+                                    </div>
+                                    <div class="w-full bg-white/5 h-1.5 rounded-full overflow-hidden mb-1">
+                                        <div class="bg-emerald-500 h-full rounded-full" style="width: ${pct}%"></div>
+                                    </div>
+                                    <div id="details-${groupId}" class="product-details">
+                                        <div class="pt-2 space-y-1">
+                                            ${detailsHtml}
+                                        </div>
+                                    </div>
+                                </div>
+                            `;
+                        }).join('');
+                }
+            }
+            lucide.createIcons();
+        }
+
+        function closeCategoryDrilldown() {
+            const modal = document.getElementById('category-drilldown-modal');
+            if (modal) {
+                modal.classList.remove('active');
+                modal.style.display = 'none';
+            }
+        }
+
+        // SKU Drilldown Functions
+        function openSkuDrilldown(detailName) {
+            const isSim = currentDrilldownCat === 'sim';
+            // Filter data for this specific product detail
+            const skuData = currentDrilldownData.filter(r => r.productDetail === detailName);
+            
+            // Group by SKU
+            const skuMap = {};
+            skuData.forEach(r => {
+                const key = r.skuCode || 'Unknown';
+                if (!skuMap[key]) {
+                    skuMap[key] = { code: key, name: r.skuName || 'Unspecified SKU', revenue: 0, units: 0 };
+                }
+                skuMap[key].revenue += r.revenue;
+                skuMap[key].units += (r.units || 0);
+            });
+
+            const sortedSkus = Object.values(skuMap).sort((a, b) => isSim ? b.units - a.units : b.revenue - a.revenue);
+            const totalMetric = sortedSkus.reduce((sum, s) => sum + (isSim ? s.units : s.revenue), 0);
+
+            // Update UI
+            setVal('sku-title', detailName);
+            setVal('sku-total-val', formatDrilldownValue(totalMetric, currentDrilldownCat));
+            
+            const skuList = document.getElementById('sku-list');
+            if (skuList) {
+                skuList.innerHTML = sortedSkus.map(s => {
+                    const sMetric = isSim ? s.units : s.revenue;
+                    const pct = totalMetric > 0 ? (sMetric / totalMetric * 100) : 0;
+                    return `
+                        <div class="sku-item">
+                            <div class="flex justify-between items-start mb-2">
+                                <div>
+                                    <p class="text-white font-bold text-sm leading-tight mb-1">${s.name}</p>
+                                    <p class="text-[10px] text-slate-500 font-black tracking-widest uppercase">${s.code}</p>
+                                </div>
+                                <div class="text-right">
+                                    <p class="text-sm font-black text-indigo-400">${formatDrilldownValue(sMetric, currentDrilldownCat)}</p>
+                                    <p class="text-[10px] text-slate-500 font-bold">${s.units} UNITS</p>
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-3">
+                                <div class="flex-1 bg-white/5 h-1.5 rounded-full overflow-hidden">
+                                    <div class="bg-indigo-500 h-full rounded-full" style="width: ${pct}%"></div>
+                                </div>
+                                <span class="text-[10px] font-black text-slate-400 w-8 text-right">${pct.toFixed(0)}%</span>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            }
+
+            const modal = document.getElementById('sku-drilldown-modal');
+            if (modal) {
+                modal.classList.add('active');
+                modal.style.display = 'flex';
+                lucide.createIcons();
+            }
+        }
+
+        // --- View Switching Logic ---
+        function switchView(viewName) {
+            const views = document.querySelectorAll('.view-content');
+            const navItems = document.querySelectorAll('.nav-item');
+            
+            views.forEach(v => v.classList.remove('active'));
+            navItems.forEach(n => n.classList.remove('active'));
+            
+            const targetView = document.getElementById(`view-${viewName}`);
+            const targetNav = document.getElementById(`nav-${viewName}`);
+            
+            if (targetView) targetView.classList.add('active');
+            if (targetNav) targetNav.classList.add('active');
+            
+            // Re-render icons for new view
+            lucide.createIcons();
+        }
+
+        // --- Branch Comparison Table Implementation ---
+        function renderBranchComparisonTable() {
+            const { target, mtd, lastmonth, lastyear } = masterSession;
+            const tbody = document.getElementById('comparison-table-body');
+            if (!tbody) return;
+
+            // Date helpers
+            const now = new Date();
+            const currentDay = now.getDate();
+            const totalDaysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+            const remainingDays = Math.max(1, totalDaysInMonth - currentDay);
+            const elapsedPct = currentDay / totalDaysInMonth;
+            
+            // Robust ID helper: ID114 -> 114
+            const cleanId = (id) => String(id || '').replace(/\D/g, '');
+
+            // Map MTD data by Branch ID (Numeric matching)
+            const mtdByBranch = {};
+            mtd.forEach(r => {
+                const bId = cleanId(r.branchId);
+                if (!bId) return;
+                if (!mtdByBranch[bId]) mtdByBranch[bId] = 0;
+                mtdByBranch[bId] += r.revenue;
+            });
+
+            // Map MoM data
+            const lastMoByBranch = {};
+            (lastmonth || []).forEach(r => {
+                const bId = cleanId(r.id);
+                if (!bId) return;
+                if (!lastMoByBranch[bId]) lastMoByBranch[bId] = 0;
+                lastMoByBranch[bId] += r.revenue;
+            });
+
+            // Map YoY data
+            const lastYrByBranch = {};
+            (lastyear || []).forEach(r => {
+                const bId = cleanId(r.id);
+                if (!bId) return;
+                if (!lastYrByBranch[bId]) lastYrByBranch[bId] = 0;
+                lastYrByBranch[bId] += r.revenue;
+            });
+
+            // Combine and Calculate
+            const tableRows = target.map(t => {
+                const branchIdNumeric = cleanId(t.id);
+                const branchName = t.name;
+                const targetVal = t.target || 0;
+                const actualVal = mtdByBranch[branchIdNumeric] || 0;
+                const lastMoVal = lastMoByBranch[branchIdNumeric] || 0;
+                const lastYrVal = lastYrByBranch[branchIdNumeric] || 0;
+                
+                const achPct = targetVal > 0 ? (actualVal / targetVal * 100) : 0;
+                
+                // Advanced Trend Metrics
+                const pScore = (targetVal > 0 && elapsedPct > 0) ? (actualVal / (targetVal * elapsedPct) * 100) : 0;
+                const currentRunRate = currentDay > 0 ? (actualVal / currentDay) : 0;
+                const requiredRunRate = remainingDays > 0 ? (Math.max(0, targetVal - actualVal) / remainingDays) : 0;
+                
+                const forecastBaht = currentDay > 0 ? (actualVal / currentDay * totalDaysInMonth) : 0;
+                const forecastPct = targetVal > 0 ? (forecastBaht / targetVal * 100) : 0;
+                const diffBaht = forecastBaht - targetVal;
+
+                const momPct = lastMoVal > 0 ? (actualVal / lastMoVal * 100) : 0;
+                const momDiff = actualVal - lastMoVal;
+                
+                const yoyPct = lastYrVal > 0 ? (actualVal / lastYrVal * 100) : 0;
+                const yoyDiff = actualVal - lastYrVal;
+
+                return {
+                    id: t.id,
+                    name: branchName,
+                    target: targetVal,
+                    actual: actualVal,
+                    achPct: achPct,
+                    pScore,
+                    currentRunRate,
+                    requiredRunRate,
+                    forecastBaht: forecastBaht,
+                    forecastPct: forecastPct,
+                    diffBaht: diffBaht,
+                    momPct, momDiff, yoyPct, yoyDiff
+                };
+            }).sort((a, b) => b.actual - a.actual);
+
+            tbody.innerHTML = tableRows.map(row => {
+                const achColor = row.achPct >= 100 ? 'text-emerald-400' : 'text-amber-400';
+                const pScoreColor = row.pScore >= 100 ? 'text-emerald-400' : (row.pScore >= 90 ? 'text-amber-400' : 'text-rose-400');
+                const diffColor = row.diffBaht >= 0 ? 'text-emerald-400' : 'text-rose-400';
+                
+                return `
+                    <tr class="border-b border-white/5 hover:bg-white/5 transition-colors group">
+                        <td class="p-4 pl-5">
+                            <div class="flex flex-col">
+                                <span class="text-sm font-bold text-white">${row.name}</span>
+                                <span class="text-[9px] text-slate-500 font-black uppercase tracking-widest">${row.id}</span>
+                            </div>
+                        </td>
+                        <td class="p-4 text-right text-sm font-medium text-slate-400">${formatVal(row.target)}</td>
+                        <td class="p-4 text-right text-sm font-bold text-white">${formatVal(row.actual)}</td>
+                        <td class="p-4 text-center">
+                            <span class="text-xs font-black ${achColor} bg-white/5 px-2 py-1 rounded">${row.achPct.toFixed(1)}%</span>
+                        </td>
+                        <td class="p-4 text-center">
+                            <div class="flex flex-col items-center">
+                                <span class="text-xs font-black ${pScoreColor}">${row.pScore.toFixed(1)}%</span>
+                                <span class="text-[8px] font-black uppercase text-slate-500">${row.pScore >= 100 ? 'Ahead' : 'Delayed'}</span>
+                            </div>
+                        </td>
+                        <td class="p-4 text-right">
+                            <div class="flex flex-col items-end">
+                                <span class="text-sm font-black text-emerald-400">${formatVal(row.requiredRunRate)}</span>
+                                <span class="text-[8px] text-slate-500 font-bold uppercase">per day</span>
+                            </div>
+                        </td>
+                        <td class="p-4 text-right text-xs font-bold text-slate-300">
+                            <div class="flex flex-col items-end">
+                                <span class="${row.momDiff >= 0 ? 'text-emerald-400' : 'text-rose-400'}">${row.momPct.toFixed(1)}%</span>
+                                <span class="text-[8px] opacity-50">MoM</span>
+                            </div>
+                        </td>
+                        <td class="p-4 text-right text-xs font-bold text-slate-300">
+                            <div class="flex flex-col items-end">
+                                <span class="${row.yoyDiff >= 0 ? 'text-emerald-400' : 'text-rose-400'}">${row.yoyPct.toFixed(1)}%</span>
+                                <span class="text-[8px] opacity-50">YoY</span>
+                            </div>
+                        </td>
+                        <td class="p-4 text-right">
+                            <div class="flex flex-col items-end">
+                                <span class="text-sm font-bold text-indigo-300">${formatVal(row.forecastBaht)}</span>
+                                <span class="text-[9px] text-slate-500 font-black">${row.forecastPct.toFixed(1)}%</span>
+                            </div>
+                        </td>
+                        <td class="p-4 pr-5 text-right font-black ${diffColor} text-sm">
+                            ${row.diffBaht >= 0 ? '+' : ''}${formatVal(row.diffBaht)}
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        async function captureBranchPerformance() {
+            const section = document.getElementById('branch-performance-section');
+            if (!section) return;
+
+            const btn = section.querySelector('button');
+            const originalBtnDisplay = btn.style.display;
+            
+            try {
+                // Hide button during capture
+                btn.style.opacity = '0';
+                
+                const canvas = await html2canvas(section, {
+                    backgroundColor: '#0f172a',
+                    scale: 2, // Higher quality
+                    logging: false,
+                    useCORS: true
+                });
+
+                const link = document.createElement('a');
+                const dateStr = new Date().toISOString().split('T')[0];
+                link.download = `Branch_Performance_${dateStr}.png`;
+                link.href = canvas.toDataURL('image/png');
+                link.click();
+            } catch (err) {
+                console.error("Capture failed:", err);
+                alert("Capture failed. Please try again.");
+            } finally {
+                btn.style.opacity = '1';
+            }
+        }
+
+
+        function formatVal(v) {
+            const absV = Math.abs(v);
+            if (absV >= 1000000) return `฿${(v/1000000).toFixed(1)}M`;
+            if (absV >= 1000) return `฿${Math.round(v/1000)}k`;
+            return `฿${Math.round(v).toLocaleString()}`;
+        }
+
+        function formatUnit(v) {
+            return Math.round(v).toLocaleString();
+        }
+    </script>
+</body>
+</html>
