@@ -179,6 +179,7 @@
             font-weight: 700;
             background: linear-gradient(to bottom right, #fff, #94a3b8);
             -webkit-background-clip: text;
+            background-clip: text;
             -webkit-text-fill-color: transparent;
         }
 
@@ -255,6 +256,29 @@
         }
 
         #category-drilldown-modal.active .modal-content-wrapper {
+            transform: scale(1) translateY(0);
+        }
+
+        /* Executive Branch Modal */
+        #branch-exec-modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.95);
+            backdrop-filter: blur(12px);
+            z-index: 2100;
+            opacity: 0;
+            transition: all 0.4s ease;
+            overflow-y: auto;
+            padding: 2rem 1rem;
+        }
+
+        #branch-exec-modal.active {
+            display: flex;
+            opacity: 1;
+        }
+
+        #branch-exec-modal.active .modal-content-wrapper {
             transform: scale(1) translateY(0);
         }
 
@@ -438,9 +462,88 @@
                         <p id="sku-total-val" class="text-lg font-bold text-white">฿0</p>
                     </div>
                 </div>
-                <button onclick="closeSkuDrilldown()" class="px-6 py-2 bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-400 rounded-xl text-xs font-black transition-all uppercase tracking-widest border border-indigo-500/30">
+                <button id="sku-back-btn" onclick="goBackSku()" class="px-6 py-2 bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-400 rounded-xl text-xs font-black transition-all uppercase tracking-widest border border-indigo-500/30">
                     Back to Category
                 </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Branch Executive Drilldown Modal -->
+    <div id="branch-exec-modal">
+        <div class="modal-content-wrapper max-w-5xl">
+            <div class="p-8">
+                <div class="flex justify-between items-start mb-8">
+                    <div>
+                        <div class="flex items-center gap-3 mb-1">
+                            <div class="w-1.5 h-6 bg-indigo-500 rounded-full shadow-[0_0_10px_rgba(99,102,241,0.5)]"></div>
+                            <h2 class="text-3xl font-black text-white tracking-tight uppercase" id="branch-modal-name">Branch Performance</h2>
+                        </div>
+                        <p class="text-slate-400 text-sm font-medium" id="branch-modal-id">Executive Deep Dive</p>
+                    </div>
+                    <button onclick="closeBranchModal()" class="w-10 h-10 bg-white/5 hover:bg-white/10 rounded-full flex items-center justify-center transition-all group">
+                        <i data-lucide="x" class="text-slate-400 group-hover:text-white transition-colors"></i>
+                    </button>
+                </div>
+
+                <!-- Categories Grid -->
+                <div class="overflow-hidden rounded-2xl border border-white/5 bg-slate-950/50 backdrop-blur-xl mb-6">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-white/5">
+                                <th class="p-4 text-[10px] font-black uppercase tracking-widest text-slate-500">Category</th>
+                                <th class="p-4 text-right text-[10px] font-black uppercase tracking-widest text-slate-500">Target</th>
+                                <th class="p-4 text-right text-[10px] font-black uppercase tracking-widest text-slate-500">Actual</th>
+                                <th class="p-4 text-center text-[10px] font-black uppercase tracking-widest text-slate-500">Ach %</th>
+                                <th class="p-4 text-right text-[10px] font-black uppercase tracking-widest text-slate-500">Units</th>
+                                <th class="p-4 text-right text-[10px] font-black uppercase tracking-widest text-slate-500">Forecast (฿)</th>
+                                <th class="p-4 text-center text-[10px] font-black uppercase tracking-widest text-slate-500">Forecast %</th>
+                            </tr>
+                        </thead>
+                        <tbody id="branch-modal-body">
+                            <!-- Rows populated by JS -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Focus Section Header -->
+                <div class="flex items-center gap-2 mb-4 px-2">
+                    <div class="w-1.5 h-4 bg-rose-500 rounded-full shadow-[0_0_10px_rgba(244,63,94,0.3)]"></div>
+                    <h3 class="text-[10px] font-black uppercase tracking-widest text-slate-400">High-Intelligence Focus Metrics</h3>
+                </div>
+
+                <!-- Focus Table -->
+                <div class="overflow-hidden rounded-2xl border border-white/5 bg-slate-950/30 backdrop-blur-xl mb-6">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-white/5">
+                                <th class="p-4 text-[10px] font-black uppercase tracking-widest text-slate-500">Focus Item</th>
+                                <th class="p-4 text-right text-[10px] font-black uppercase tracking-widest text-slate-500">Actual / Units</th>
+                                <th class="p-4 text-center text-[10px] font-black uppercase tracking-widest text-slate-500">%ATT</th>
+                                <th class="p-4 text-right text-[10px] font-black uppercase tracking-widest text-slate-500">Forecast</th>
+                                <th class="p-4 text-center text-[10px] font-black uppercase tracking-widest text-slate-500">Trend</th>
+                                <th class="p-4 text-right text-[10px] font-black uppercase tracking-widest text-slate-500">Diff</th>
+                            </tr>
+                        </thead>
+                        <tbody id="branch-focus-body">
+                            <!-- Focus items populated by JS -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="flex justify-between items-center bg-white/5 p-4 rounded-xl border border-white/5">
+                    <div class="flex items-center gap-4">
+                        <div class="flex flex-col">
+                            <span class="text-[8px] text-slate-500 font-black uppercase tracking-widest">Growth Forecast</span>
+                            <div class="flex items-center gap-2 text-emerald-400 font-black" id="branch-modal-status">
+                                ON TRACK
+                            </div>
+                        </div>
+                    </div>
+                    <button onclick="closeBranchModal()" class="px-6 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl font-bold text-xs transition-all shadow-lg shadow-indigo-500/20">
+                        Close Deep Dive
+                    </button>
+                </div>
             </div>
         </div>
     </div>
@@ -457,62 +560,91 @@
     <!-- Upload Hub Landing Page -->
     <div id="upload-hub" class="upload-container">
         <div class="flex flex-col items-center gap-8 max-w-6xl px-6 w-full">
-            <div class="text-center">
-                <h1 class="text-5xl font-black tracking-tighter mb-2 italic">
-                    ASM <span class="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-rose-400">MASTER</span>
+            <div class="text-center space-y-4">
+                <div class="inline-flex items-center justify-center p-1 rounded-2xl bg-white/5 border border-white/10 mb-2">
+                    <span class="px-3 py-1 text-[10px] font-black uppercase tracking-[0.2em] text-indigo-400">Intelligence Data Hub</span>
+                </div>
+                <h1 class="text-6xl md:text-7xl font-black tracking-[ -0.05em] leading-none">
+                    ASM <span class="text-transparent bg-clip-text bg-gradient-to-br from-white via-indigo-300 to-rose-400">MASTER</span>
                 </h1>
-                <p class="text-slate-400 text-base max-w-xl mx-auto">
-                    Initialize your dashboard by uploading the 5 critical data files below.
+                <p class="text-slate-400 text-sm md:text-base max-w-lg mx-auto font-medium opacity-80">
+                    Precision Analytics for Branch Management. <br class="hidden md:block">
+                    Start by dropping your data assets below.
                 </p>
             </div>
 
-            <!-- Centralized Bulk Upload Section -->
-            <div class="max-w-2xl mx-auto mb-8">
+            <!-- Console Panel: Combined Upload & Status -->
+            <div class="w-full max-w-3xl">
                 <div class="relative group">
-                    <div class="absolute -inset-0.5 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-2xl blur opacity-20 group-hover:opacity-40 transition duration-1000"></div>
-                    <div class="relative bg-slate-900/80 backdrop-blur-xl ring-1 ring-white/10 rounded-2xl p-6 md:p-8 flex flex-col items-center text-center">
-                        <div class="w-12 h-12 bg-indigo-500/10 rounded-full flex items-center justify-center mb-4">
-                            <i data-lucide="upload-cloud" class="w-6 h-6 text-indigo-400"></i>
-                        </div>
-                        <h2 class="text-xl font-bold mb-2">Smart Multi-Upload</h2>
-                        <p class="text-slate-500 text-xs mb-6 max-w-xs">Select all 5 files at once. Our system will automatically categorize them.</p>
+                    <div class="absolute -inset-1 bg-gradient-to-r from-indigo-500/20 to-rose-500/20 rounded-[2rem] blur-xl opacity-50 group-hover:opacity-100 transition duration-1000"></div>
+                    <div class="relative bg-slate-950/80 backdrop-blur-3xl ring-1 ring-white/10 rounded-[2rem] p-8 md:p-10 border border-white/5 shadow-2xl">
                         
-                        <input type="file" id="bulk-upload" class="hidden" multiple accept=".xlsx, .xls" onchange="handleBulkUpload(event)">
-                        <button onclick="document.getElementById('bulk-upload').click()" class="px-8 py-3 bg-indigo-600 hover:bg-indigo-500 rounded-xl font-bold text-sm shadow-lg shadow-indigo-500/20 transition-all hover:-translate-y-0.5 flex items-center gap-2">
-                            <span>SELECT ALL FILES</span>
-                            <i data-lucide="plus-square" class="w-5 h-5"></i>
-                        </button>
-                    </div>
-                </div>
-            </div>
+                        <!-- Upload Target -->
+                        <div 
+                            id="drop-zone"
+                            onclick="document.getElementById('bulk-upload').click()"
+                            class="mb-8 p-12 border-2 border-dashed border-white/5 rounded-2xl bg-white/[0.02] hover:bg-white/[0.05] hover:border-indigo-500/30 transition-all cursor-pointer group/upload flex flex-col items-center justify-center gap-4"
+                        >
+                            <input type="file" id="bulk-upload" class="hidden" multiple accept=".xlsx, .xls" onchange="handleBulkUpload(event)">
+                            <div class="w-16 h-16 bg-indigo-500/10 rounded-2xl flex items-center justify-center rotate-3 group-hover/upload:rotate-0 transition-transform duration-500">
+                                <i data-lucide="upload-cloud" class="w-8 h-8 text-indigo-400"></i>
+                            </div>
+                            <div>
+                                <h3 class="text-xl font-bold text-white mb-1">Smart Multi-Upload</h3>
+                                <p class="text-slate-500 text-sm">Drag & drop or <span class="text-indigo-400 font-bold">Browse Files</span></p>
+                            </div>
+                        </div>
 
-            <!-- Steps Row -->
-            <div class="flex flex-wrap justify-center gap-4 mb-8">
-                <!-- Compact Status Slots -->
-                <div id="slot-target" class="flex flex-col items-center gap-1.5 px-4 py-3 rounded-xl bg-white/5 border border-white/5 opacity-40 transition-all duration-500">
-                    <i data-lucide="target" class="w-4 h-4 text-amber-500"></i>
-                    <span class="text-[10px] font-black uppercase tracking-widest text-slate-400">Target</span>
-                    <div id="status-target" class="text-[8px] font-bold mt-1"></div>
-                </div>
-                <div id="slot-mtd" class="flex flex-col items-center gap-1.5 px-4 py-3 rounded-xl bg-white/5 border border-white/5 opacity-40 transition-all duration-500">
-                    <i data-lucide="calendar" class="w-4 h-4 text-indigo-400"></i>
-                    <span class="text-[10px] font-black uppercase tracking-widest text-slate-400">MTD</span>
-                    <div id="status-mtd" class="text-[8px] font-bold mt-1"></div>
-                </div>
-                <div id="slot-today" class="flex flex-col items-center gap-1.5 px-4 py-3 rounded-xl bg-white/5 border border-white/5 opacity-40 transition-all duration-500">
-                    <i data-lucide="clock" class="w-4 h-4 text-emerald-400"></i>
-                    <span class="text-[10px] font-black uppercase tracking-widest text-slate-400">Today</span>
-                    <div id="status-today" class="text-[8px] font-bold mt-1"></div>
-                </div>
-                <div id="slot-lastmonth" class="flex flex-col items-center gap-1.5 px-4 py-3 rounded-xl bg-white/5 border border-white/5 opacity-40 transition-all duration-500">
-                    <i data-lucide="history" class="w-4 h-4 text-rose-400"></i>
-                    <span class="text-[10px] font-black uppercase tracking-widest text-slate-400">Last MO</span>
-                    <div id="status-lastmonth" class="text-[8px] font-bold mt-1"></div>
-                </div>
-                <div id="slot-lastyear" class="flex flex-col items-center gap-1.5 px-4 py-3 rounded-xl bg-white/5 border border-white/5 opacity-40 transition-all duration-500">
-                    <i data-lucide="shrink" class="w-4 h-4 text-sky-400"></i>
-                    <span class="text-[10px] font-black uppercase tracking-widest text-slate-400">Last YR</span>
-                    <div id="status-lastyear" class="text-[8px] font-bold mt-1"></div>
+                        <!-- File Queue List -->
+                        <div id="file-queue-container" class="hidden mb-8 p-6 rounded-2xl bg-white/5 border border-white/10 ring-1 ring-white/5">
+                            <div class="flex items-center justify-between mb-4">
+                                <div class="flex items-center gap-2">
+                                    <div class="w-1 h-3 bg-indigo-500 rounded-full"></div>
+                                    <h4 class="text-[10px] font-black uppercase tracking-widest text-slate-400">Inventory of Uploaded Assets</h4>
+                                </div>
+                                <button onclick="clearFileQueue()" class="text-[10px] font-black text-rose-400 hover:text-rose-300 uppercase tracking-widest transition-colors flex items-center gap-1">
+                                    <i data-lucide="trash-2" class="w-3 h-3"></i> Clear Selection
+                                </button>
+                            </div>
+                            <div id="file-queue-list" class="space-y-2 max-h-48 overflow-y-auto pr-2 custom-scrollbar">
+                                <!-- Files populated by JS -->
+                            </div>
+                        </div>
+
+                        <!-- Status Grid (Integrated) -->
+                        <div class="grid grid-cols-5 gap-2 md:gap-4">
+                            <!-- Target -->
+                            <div id="slot-target" class="flex flex-col items-center gap-2 p-3 rounded-xl bg-white/5 border border-white/5 opacity-40 transition-all duration-500">
+                                <i data-lucide="target" class="w-4 h-4 text-amber-500"></i>
+                                <span class="text-[8px] font-black uppercase tracking-widest text-slate-500">Target</span>
+                                <div id="status-target"></div>
+                            </div>
+                            <!-- MTD -->
+                            <div id="slot-mtd" class="flex flex-col items-center gap-2 p-3 rounded-xl bg-white/5 border border-white/5 opacity-40 transition-all duration-500">
+                                <i data-lucide="calendar" class="w-4 h-4 text-indigo-400"></i>
+                                <span class="text-[8px] font-black uppercase tracking-widest text-slate-500">MTD</span>
+                                <div id="status-mtd"></div>
+                            </div>
+                            <!-- Today -->
+                            <div id="slot-today" class="flex flex-col items-center gap-2 p-3 rounded-xl bg-white/5 border border-white/5 opacity-40 transition-all duration-500">
+                                <i data-lucide="clock" class="w-4 h-4 text-emerald-400"></i>
+                                <span class="text-[8px] font-black uppercase tracking-widest text-slate-500">Today</span>
+                                <div id="status-today"></div>
+                            </div>
+                            <!-- Last MO -->
+                            <div id="slot-lastmonth" class="flex flex-col items-center gap-2 p-3 rounded-xl bg-white/5 border border-white/5 opacity-40 transition-all duration-500">
+                                <i data-lucide="history" class="w-4 h-4 text-rose-400"></i>
+                                <span class="text-[8px] font-black uppercase tracking-widest text-slate-500">Last MO</span>
+                                <div id="status-lastmonth"></div>
+                            </div>
+                            <!-- Last YR -->
+                            <div id="slot-lastyear" class="flex flex-col items-center gap-2 p-3 rounded-xl bg-white/5 border border-white/5 opacity-40 transition-all duration-500">
+                                <i data-lucide="shrink" class="w-4 h-4 text-sky-400"></i>
+                                <span class="text-[8px] font-black uppercase tracking-widest text-slate-500">Last YR</span>
+                                <div id="status-lastyear"></div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -844,16 +976,34 @@
                     </div>
                 </div>
 
-                <!-- Branch Performance Table (Integrated into Overview) -->
                 <div class="col-span-full mt-10" id="branch-performance-section">
-                    <div class="flex items-center justify-between mb-6 px-2">
-                        <div class="flex items-center gap-3">
-                            <div class="w-1.5 h-6 bg-indigo-500 rounded-full"></div>
-                            <h3 class="text-2xl font-black text-white tracking-tight uppercase">Branch Performance Summary</h3>
+                    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+                        <div class="flex flex-col md:flex-row md:items-center gap-2 md:gap-6">
+                            <div class="flex items-center gap-3">
+                                <div class="w-1.5 h-6 bg-indigo-500 rounded-full shadow-[0_0_10px_rgba(99,102,241,0.5)]"></div>
+                                <h3 class="text-2xl font-black text-white tracking-tight uppercase">Branch Performance Summary</h3>
+                            </div>
+                            <div id="data-audit-tags" class="flex gap-2">
+                                <!-- Populated by JS -->
+                            </div>
+                            <div class="flex items-center gap-4 bg-white/5 px-4 py-2 rounded-xl border border-white/5 border-l-rose-500/50">
+                                <div class="flex flex-col">
+                                    <span class="text-[8px] text-slate-500 font-black uppercase tracking-widest">Snapshot Date</span>
+                                    <span class="text-xs font-black text-white" id="perf-current-date">-</span>
+                                </div>
+                                <div class="w-px h-6 bg-white/10"></div>
+                                <div class="flex flex-col">
+                                    <span class="text-[8px] text-rose-500 font-black uppercase tracking-widest">Urgency Level</span>
+                                    <span class="text-xs font-black text-rose-400 flex items-center gap-1">
+                                        <i data-lucide="clock" class="w-3 h-3"></i>
+                                        <span id="perf-days-left">- Days Remaining</span>
+                                    </span>
+                                </div>
+                            </div>
                         </div>
-                        <button onclick="captureBranchPerformance()" class="flex items-center gap-2 bg-white/5 hover:bg-white/10 text-indigo-400 hover:text-indigo-300 px-4 py-2 rounded-xl border border-white/10 transition-all hover:scale-105 active:scale-95 group">
-                            <i data-lucide="camera" class="w-4 h-4 group-hover:rotate-12 transition-transform"></i>
-                            <span class="text-xs font-black uppercase tracking-widest">Copy Table</span>
+                        <button onclick="captureBranchPerformance()" class="flex items-center gap-2 bg-white/5 hover:bg-white/10 text-indigo-400 hover:text-indigo-300 px-6 py-3 rounded-2xl border border-white/10 transition-all hover:scale-105 active:scale-95 group shadow-xl">
+                            <i data-lucide="camera" class="w-5 h-5 group-hover:rotate-12 transition-transform text-slate-400 group-hover:text-indigo-300"></i>
+                            <span class="text-sm font-black uppercase tracking-widest">Copy Table</span>
                         </button>
                     </div>
 
@@ -909,6 +1059,65 @@
         
         let charts = {};
 
+        let uploadedFilesQueue = [];
+
+        function clearFileQueue() {
+            uploadedFilesQueue = [];
+            masterSession = {
+                target: [], mtd: [], today: [], lastmonth: [], lastyear: []
+            };
+            // Reset UI
+            document.querySelectorAll('[id^="slot-"]').forEach(el => {
+                el.classList.add('opacity-40');
+                el.classList.remove('ready');
+            });
+            document.querySelectorAll('[id^="status-"]').forEach(el => el.innerHTML = '');
+            renderFileQueue();
+            checkReadiness();
+        }
+
+        function renderFileQueue() {
+            const container = document.getElementById('file-queue-container');
+            const list = document.getElementById('file-queue-list');
+            
+            if (uploadedFilesQueue.length === 0) {
+                container.classList.add('hidden');
+                return;
+            }
+            
+            container.classList.remove('hidden');
+            list.innerHTML = uploadedFilesQueue.map(f => {
+                const colors = {
+                    target: 'text-amber-400 bg-amber-400/10 border-amber-400/20',
+                    mtd: 'text-indigo-400 bg-indigo-400/10 border-indigo-400/20',
+                    today: 'text-emerald-400 bg-emerald-400/10 border-emerald-400/20',
+                    lastmonth: 'text-rose-400 bg-rose-400/10 border-rose-400/20',
+                    lastyear: 'text-sky-400 bg-sky-400/10 border-sky-400/20',
+                    error: 'text-rose-500 bg-rose-500/10 border-rose-500/20'
+                };
+                const slotName = f.slot ? f.slot.toUpperCase() : 'SKIPPED';
+                const colorClass = colors[f.slot] || 'text-slate-500 bg-white/5 border-white/10';
+
+                return `
+                    <div class="flex items-center justify-between p-2.5 rounded-xl bg-white/[0.03] border border-white/5 shadow-sm group/item hover:bg-white/[0.05] transition-all">
+                        <div class="flex items-center gap-3 overflow-hidden">
+                            <div class="w-7 h-7 rounded-lg bg-white/5 flex items-center justify-center shrink-0">
+                                <i data-lucide="${f.slot === 'error' ? 'alert-triangle' : 'file-text'}" class="w-3.5 h-3.5 ${f.slot === 'error' ? 'text-rose-400' : 'text-slate-400'}"></i>
+                            </div>
+                            <div class="flex flex-col min-w-0">
+                                <span class="text-[11px] font-bold text-slate-200 truncate pr-4">${f.name}</span>
+                                <span class="text-[9px] text-slate-500 font-medium">Auto-Ingested Assets</span>
+                            </div>
+                        </div>
+                        <div class="px-2.5 py-1 rounded-lg border text-[8px] font-black tracking-widest shrink-0 shadow-sm ${colorClass}">
+                            ${slotName}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            lucide.createIcons();
+        }
+
         function triggerFileInput(slotId) {
             document.getElementById(`file-${slotId}`).click();
         }
@@ -932,15 +1141,19 @@
                     return;
                 }
 
-                masterSession[slotId] = data;
+                // DATASET MERGING: Add to existing
+                masterSession[slotId] = masterSession[slotId].concat(data);
+                uploadedFilesQueue.push({ name: file.name, slot: slotId });
                 
                 // Success Feedback
+                slotEl.classList.remove('opacity-40');
                 slotEl.classList.add('ready');
-                statusEl.innerHTML = `<span class="text-emerald-400 font-bold flex items-center gap-1 justify-center bg-emerald-500/20 px-2 py-1 rounded-lg">
-                    <i data-lucide="check-circle" class="w-3 h-3"></i> ${data.length} Rows Ready
+                statusEl.innerHTML = `<span class="text-emerald-400 font-bold flex items-center gap-1 justify-center bg-emerald-500/20 px-1.5 py-0.5 rounded text-[7px]">
+                    <i data-lucide="check-circle" class="w-2 h-2"></i> ${masterSession[slotId].length} Rows Merged
                 </span>`;
-                lucide.createIcons();
                 
+                renderFileQueue();
+                lucide.createIcons();
                 checkReadiness();
             } catch (err) {
                 console.error(err);
@@ -958,19 +1171,26 @@
                 const arrayBuffer = await response.arrayBuffer();
                 const file = new File([arrayBuffer], filename, { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
                 
-                // Simulate the file input handler logic
                 const slotEl = document.getElementById(`slot-${slotId}`);
                 const statusEl = document.getElementById(`status-${slotId}`);
                 
                 if (statusEl) statusEl.innerHTML = `<span class="text-indigo-400 font-bold">Parsing...</span>`;
                 const data = await parseExcelFile(file, slotId);
                 
-                if (data.length > 0) {
-                    masterSession[slotId] = data;
-                    slotEl.classList.add('ready');
-                    if (statusEl) statusEl.innerHTML = `<span class="text-emerald-400 font-bold flex items-center gap-1 justify-center bg-emerald-500/20 px-1.5 py-0.5 rounded text-[7px]">
-                        <i data-lucide="check-circle" class="w-2 h-2"></i> ${data.length} Rows
-                    </span>`;
+                if (data && data.length > 0) {
+                    masterSession[slotId] = masterSession[slotId].concat(data); // DATASET MERGING
+                    uploadedFilesQueue.push({ name: filename, slot: slotId });
+                    
+                    if (slotEl) {
+                        slotEl.classList.remove('opacity-40');
+                        slotEl.classList.add('ready');
+                    }
+                    if (statusEl) {
+                        statusEl.innerHTML = `<span class="text-emerald-400 font-bold flex items-center gap-1 justify-center bg-emerald-500/20 px-1.5 py-0.5 rounded text-[7px]">
+                            <i data-lucide="check-circle" class="w-2 h-2"></i> ${masterSession[slotId].length} Rows Merged
+                        </span>`;
+                    }
+                    renderFileQueue();
                     return true;
                 }
                 return false;
@@ -1026,17 +1246,37 @@
                 const filename = file.name.toUpperCase();
                 let slotId = null;
 
-                // Smart Detection Logic
-                if (filename.includes('TARGET')) {
-                    slotId = 'target';
-                } else if (filename.includes('MTD')) {
-                    slotId = 'mtd';
-                } else if (filename.includes('TODAY')) {
-                    slotId = 'today';
-                } else if (filename.includes('FEB2026') || filename.includes('FEBRUARY2026')) {
-                    slotId = 'lastmonth';
-                } else if (filename.includes('FEB2025') || filename.includes('FEBRUARY2025')) {
-                    slotId = 'lastyear';
+                // --- Executive Smart Detection Logic ---
+                const now = new Date();
+                const curMonth = now.getMonth(); // 0-11
+                const curYear = now.getFullYear();
+                
+                const months = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
+                const monthsFull = ['JANUARY','FEBRUARY','MARCH','APRIL','MAY','JUNE','JULY','AUGUST','SEPTEMBER','OCTOBER','NOVEMBER','DECEMBER'];
+
+                const lastMonthIdx = (curMonth === 0) ? 11 : curMonth - 1;
+                const lastMonthYear = (curMonth === 0) ? curYear - 1 : curYear;
+                
+                const lmShort = months[lastMonthIdx];
+                const lmFull = monthsFull[lastMonthIdx];
+                const lyYear = curYear - 1;
+                const curMonthShort = months[curMonth];
+
+                // --- Professional Multi-Dimension Smart Detection ---
+                const kws = {
+                    target: ['TARGET', 'GOAL', 'PLAN'],
+                    mtd: ['MTD', 'MONTH TO DATE', 'MONTH-TO-DATE'],
+                    today: ['TODAY', 'DAILY', '1856TODAY'],
+                    lastyear: ['LAST YO', 'LASTYO', 'LY', 'LAST YEAR', 'LASTYEAR', 'PREV YR', String(lyYear)],
+                    lastmonth: ['LAST MO', 'LASTMO', 'LM', 'PREV MO', 'PREVIOUS MO', lmShort, lmFull]
+                };
+
+                // Priority Detection
+                for (const slot of ['target', 'mtd', 'today', 'lastyear', 'lastmonth']) {
+                    if (kws[slot].some(p => filename.includes(p))) {
+                        slotId = slot;
+                        break;
+                    }
                 }
 
                 if (slotId) {
@@ -1046,21 +1286,33 @@
                     try {
                         const data = await parseExcelFile(file, slotId);
                         if (data && data.length > 0) {
-                            masterSession[slotId] = data;
+                            // DATASET MERGING: Add to existing instead of overwriting
+                            masterSession[slotId] = masterSession[slotId].concat(data);
+                            
+                            uploadedFilesQueue.push({ name: file.name, slot: slotId });
+                            
                             const slotEl = document.getElementById(`slot-${slotId}`);
-                            slotEl.classList.remove('opacity-50');
+                            slotEl.classList.remove('opacity-40');
                             slotEl.classList.add('ready');
-                            if (statusEl) statusEl.innerHTML = `<span class="text-emerald-400 font-bold flex items-center gap-1 justify-center bg-emerald-500/20 px-1.5 py-0.5 rounded text-[7px]">
-                                <i data-lucide="check-circle" class="w-2 h-2"></i> ${data.length} Rows
-                            </span>`;
+                            
+                            if (statusEl) {
+                                statusEl.innerHTML = `<span class="text-emerald-400 font-bold flex items-center gap-1 justify-center bg-emerald-500/20 px-1.5 py-0.5 rounded text-[7px]">
+                                    <i data-lucide="check-circle" class="w-2 h-2"></i> ${masterSession[slotId].length} Rows Merged
+                                </span>`;
+                            }
                         }
                     } catch (err) {
                         console.error(`Error parsing ${file.name}:`, err);
+                        uploadedFilesQueue.push({ name: file.name, slot: 'error' });
                         if (statusEl) statusEl.innerHTML = `<span class="text-rose-500 text-[8px]">Error</span>`;
                     }
+                } else {
+                    // Record file for queue even if not categorized
+                    uploadedFilesQueue.push({ name: file.name, slot: null });
                 }
             }
 
+            renderFileQueue();
             checkReadiness();
             lucide.createIcons();
             
@@ -1074,97 +1326,126 @@
             const data = await file.arrayBuffer();
             const workbook = XLSX.read(new Uint8Array(data), { type: 'array' });
             const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
-            
-            // For target and mtd, use letter headers to be precise
-            const options = (slotId === 'target' || slotId === 'mtd') ? { header: 'A' } : {};
-            const json = XLSX.utils.sheet_to_json(firstSheet, options);
-            
-            console.log(`[DEBUG] Raw JSON (${slotId}):`, json.slice(0, 5)); // Log first 5 rows
+            const json = XLSX.utils.sheet_to_json(firstSheet, { header: 'A' });
             
             if (!json || json.length === 0) return [];
 
+            // --- Autonomous Pattern Discovery Helper ---
+            const findColumnMap = (rows) => {
+                const map = { id: 'N', name: 'J', rev: 'E', pCode: 'I', pGroup: 'K', pDetail: 'M', units: 'C', sku: 'A', skuName: 'B', pMapping: 'J' }; // Defaults for Raw
+                if (rows.length === 0) return map;
+
+                const sampleRows = rows.slice(0, 20); // Scan top 20 rows
+                const cols = Object.keys(rows[0]);
+                
+                // Score each column for potential roles
+                const scores = {};
+                cols.forEach(c => scores[c] = { id: 0, name: 0, rev: 0, pCode: 0 });
+
+                sampleRows.forEach(row => {
+                    cols.forEach(c => {
+                        const val = String(row[c] || '').trim();
+                        const valUp = val.toUpperCase();
+                        
+                        // ID Scoring (e.g., 114, ID1999, 106)
+                        if (/^(ID)?\d{2,4}$/i.test(val)) scores[c].id += 5;
+                        if (['BRANCHID', 'CODE', 'ID', 'รหัส'].some(k => valUp.includes(k))) scores[c].id += 10;
+                        
+                        // Name Scoring (e.g., Studio 7, Central, Paragon)
+                        if (val.length > 5 && (valUp.includes('STUDIO') || valUp.includes('CENTRAL') || valUp.includes('SHOP') || valUp.includes('สาขา'))) scores[c].name += 5;
+                        if (['ชื่อ', 'NAME', 'BRANCH', 'STORE', 'DESCRIPTION'].some(k => valUp.includes(k))) scores[c].name += 10;
+
+                        // Revenue Scoring (Currency-like big numbers)
+                        const num = parseFloat(val.replace(/[^0-9.-]+/g, ""));
+                        if (num > 1000 && !isNaN(num)) scores[c].rev += 5;
+                        if (['REVENUE', 'SALES', 'ยอดขาย', 'NET', 'TOTAL', 'AMOUNT'].some(k => valUp.includes(k))) scores[c].rev += 10;
+
+                        // Product Code Scoring (53, 54, 48, 72)
+                        if (['53', '54', '48', '72'].includes(val)) scores[c].pCode += 10;
+                    });
+                });
+
+                // Pick winners
+                const pick = (role) => Object.keys(scores).sort((a, b) => scores[b][role] - scores[a][role])[0];
+                
+                const bestId = pick('id');
+                const bestName = pick('name');
+                const bestRev = pick('rev');
+                const bestP = pick('pCode');
+
+                // If we found a strong match for Raw format, use Raw defaults for others
+                const isRaw = scores[bestId].id > 20 && scores[bestName].name > 20;
+                if (isRaw) return map; // Keep Raw defaults (N, J, E, I, etc.)
+
+                // Otherwise, use discovered winners
+                return {
+                    id: (scores[bestId].id > 10) ? bestId : 'N',
+                    name: (scores[bestName].name > 10) ? bestName : 'J',
+                    rev: (scores[bestRev].rev > 10) ? bestRev : 'E',
+                    pCode: (scores[bestP].pCode > 10) ? bestP : 'I',
+                    // Keep others as defaults or simple header search for non-raw
+                    pGroup: 'K', pDetail: 'M', units: 'C', sku: 'A', skuName: 'B', pMapping: 'J'
+                };
+            };
+
+            const colMap = findColumnMap(json);
+            console.log(`[AUTONOMOUS] Sensing Results for ${slotId}:`, colMap);
+
             if (slotId === 'target') {
-                const results = json.map(row => {
-                    const id = String(row['B'] || '').trim();
-                    const name = String(row['C'] || '').trim();
+                return json.map(row => {
+                    const parseF = (val) => parseFloat(String(val || '0').replace(/[^0-9.-]+/g, "")) || 0;
+                    const id = String(row['B'] || row['A'] || '').trim();
+                    const name = String(row['C'] || row['B'] || '').trim();
                     if (!id && !name) return null;
-                    
+
                     return {
                         id: id,
                         name: name,
-                        target: parseFloat(String(row['K'] || '0').replace(/[^0-9.-]+/g, "")) || 0,
-                        macTarget: parseFloat(String(row['L'] || '0').replace(/[^0-9.-]+/g, "")) || 0,
-                        ipadTarget: parseFloat(String(row['M'] || '0').replace(/[^0-9.-]+/g, "")) || 0,
-                        iphoneTarget: parseFloat(String(row['N'] || '0').replace(/[^0-9.-]+/g, "")) || 0,
-                        watchTarget: parseFloat(String(row['O'] || '0').replace(/[^0-9.-]+/g, "")) || 0,
-                        thirdPartyTarget: parseFloat(String(row['P'] || '0').replace(/[^0-9.-]+/g, "")) || 0,
-                        btbTarget: parseFloat(String(row['Q'] || '0').replace(/[^0-9.-]+/g, "")) || 0,
-                        simTarget: parseFloat(String(row['W'] || '0').replace(/[^0-9.-]+/g, "")) || 0
+                        target: parseF(row['K'] || row['J']),
+                        macTarget: parseF(row['L'] || row['K']),
+                        ipadTarget: parseF(row['M'] || row['L']),
+                        iphoneTarget: parseF(row['N'] || row['M']),
+                        watchTarget: parseF(row['O'] || row['N']),
+                        thirdPartyTarget: parseF(row['Q'] || row['P']),
+                        btbTarget: parseF(row['P'] || row['O']),
+                        simTarget: parseF(row['W'] || row['V'])
                     };
-                }).filter(r => r !== null && r.name && r.name !== 'Unknown' && r.name !== 'undefined' && r.name !== 'ชื่อสาขา' && r.name !== 'Name' && r.id !== 'BranchID');
-                
-                console.log(`[DEBUG] Parsed ${results.length} targets.`, results.slice(0, 3));
-                return results;
+                }).filter(r => r && r.name && !['ชื่อสาขา', 'NAME', 'BRANCH'].includes(r.name.toUpperCase()));
             }
 
-            if (slotId === 'mtd') {
-                const results = json.map(row => {
-                    const branchName = String(row['J'] || '').trim();
-                    const revenue = parseFloat(String(row['E'] || '0').replace(/[^0-9.-]+/g, "")) || 0;
-                    const productCode = String(row['I'] || '').trim();
-                    const branchId = String(row['N'] || '').trim();
-                    const productGroup = String(row['K'] || '').trim();
-                    const productDetail = String(row['M'] || '').trim();
-                    
-                    const brand = String(row['L'] || '').trim();
-                    const units = parseInt(String(row['C'] || '0').replace(/[^0-9.-]+/g, "")) || 0;
-                    
-                    if (!branchName && !productCode) return null;
-                    
-                    return {
-                        name: branchName,
-                        revenue: revenue,
-                        productCode: productCode,
-                        units: units,
-                        branchId: branchId,
-                        productGroup: productGroup,
-                        productDetail: productDetail,
-                        brand: brand,
-                        skuCode: String(row['A'] || '').trim(),
-                        skuName: String(row['B'] || '').trim(),
-                        // Raw columns for focus metrics
-                        colI: productCode,
-                        colJ: branchName,
-                        colK: productGroup,
-                        colM: productDetail
-                    };
-                }).filter(r => r !== null && r.name && r.name !== 'ชื่อสาขา' && r.name !== 'ชื่อร้าน');
-                
-                console.log(`[DEBUG] Parsed ${results.length} MTD raw records with drill-down and focus data.`, results.slice(0, 3));
-                return results;
-            }
-
+            // Universal Robust Processing
             return json.map(row => {
-                const keys = Object.keys(row);
-                const findValue = (searchTerms) => {
-                    const key = keys.find(k => searchTerms.some(term => String(k).toLowerCase().includes(term.toLowerCase())));
-                    return key ? row[key] : null;
-                };
+                const parseF = (v) => parseFloat(String(v || '0').replace(/[^0-9.-]+/g, "")) || 0;
+                const parseI = (v) => parseInt(String(v || '0').replace(/[^0-9.-]+/g, "")) || 0;
 
-                const name = findValue(['name', 'branch', 'สาขา', 'ชื่อ', 'store', 'shop', 'location']) || 'Unknown';
-                const revenue = findValue(['revenue', 'sales', 'ยอดขาย', 'ยอด', 'net', 'amount', 'total']) || 0;
-                const target = findValue(['target', 'เป้าหมาย', 'เป้า', 'goal', 'plan']) || 0;
-                const manager = findValue(['manager', 'ผู้จัดการ', 'ดูแล', 'mgr', 'staff']) || '-';
-                const id = findValue(['id', 'ไอดี', 'code', 'รหัส', 'no']) || Math.random().toString(36).substr(2, 5);
+                const name = String(row[colMap.name] || '').trim();
+                const branchId = String(row[colMap.id] || '').trim();
+                const pCode = String(row[colMap.pCode] || '').trim();
+                const revenue = parseF(row[colMap.rev]);
+
+                if (!name && !branchId && revenue === 0) return null;
 
                 return {
-                    id: String(id).trim(),
-                    name: String(name).trim(),
-                    revenue: parseFloat(String(revenue).replace(/[^0-9.-]+/g, "")) || 0,
-                    target: parseFloat(String(target).replace(/[^0-9.-]+/g, "")) || 0,
-                    manager: String(manager).trim()
+                    name: name,
+                    branchId: branchId,
+                    revenue: revenue,
+                    productCode: pCode,
+                    units: parseI(row[colMap.units]),
+                    productGroup: String(row[colMap.pGroup] || '').trim(),
+                    productDetail: String(row[colMap.pDetail] || '').trim(),
+                    brandMapping: String(row[colMap.pMapping] || '').trim(),
+                    brand: String(row['L'] || '').trim(),
+                    skuCode: String(row[colMap.sku] || '').trim(),
+                    skuName: String(row[colMap.skuName] || '').trim(),
+                    // Compatibility for Focus Engine
+                    colI: pCode,
+                    colJ: name,
+                    colK: String(row[colMap.pGroup] || '').trim(),
+                    colM: String(row[colMap.pDetail] || '').trim(),
+                    colAM: String(row['AM'] || '').trim(),
+                    colAR: String(row['AR'] || '').trim()
                 };
-            }).filter(r => r.name !== 'Unknown' && r.name !== '');
+            }).filter(r => r !== null && r.name && !['ชื่อสาขา', 'NAME', 'BRANCH'].includes(r.name.toUpperCase()));
         }
 
         // Initialize Event Listeners
@@ -1172,9 +1453,34 @@
             const genBtn = document.getElementById('gen-btn');
             if (genBtn) {
                 genBtn.addEventListener('click', (e) => {
-                    console.log("Direct Button Click Captured");
+                    console.log("Generating Dashboard...");
                     initializeDashboard();
                 });
+            }
+
+            // Initialize Drag & Drop
+            const dropZone = document.getElementById('drop-zone');
+            if (dropZone) {
+                ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                    dropZone.addEventListener(eventName, e => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                    }, false);
+                });
+
+                ['dragenter', 'dragover'].forEach(eventName => {
+                    dropZone.addEventListener(eventName, () => dropZone.classList.add('border-indigo-500', 'bg-indigo-500/5'), false);
+                });
+
+                ['dragleave', 'drop'].forEach(eventName => {
+                    dropZone.addEventListener(eventName, () => dropZone.classList.remove('border-indigo-500', 'bg-indigo-500/5'), false);
+                });
+
+                dropZone.addEventListener('drop', e => {
+                    const dt = e.dataTransfer;
+                    const files = dt.files;
+                    handleBulkUpload({ target: { files } });
+                }, false);
             }
         });
 
@@ -1186,16 +1492,20 @@
             const actionContainer = document.getElementById('init-action');
             const genBtn = document.getElementById('gen-btn');
             
-            console.log("Readiness Update:", { isReady, target: targetData.length, mtd: mtdData.length });
+            console.log("[STATUS] Readiness:", { isReady, target: targetData.length, mtd: mtdData.length });
 
             if (isReady) {
-                actionContainer.classList.remove('opacity-50');
-                genBtn.disabled = false;
-                genBtn.classList.add('animate-pulse');
+                if (actionContainer) actionContainer.classList.remove('opacity-30', 'pointer-events-none');
+                if (genBtn) {
+                    genBtn.disabled = false;
+                    genBtn.classList.add('animate-pulse', 'ring-indigo-500/50');
+                }
             } else {
-                actionContainer.classList.add('opacity-50');
-                genBtn.disabled = true;
-                genBtn.classList.remove('animate-pulse');
+                if (actionContainer) actionContainer.classList.add('opacity-30', 'pointer-events-none');
+                if (genBtn) {
+                    genBtn.disabled = true;
+                    genBtn.classList.remove('animate-pulse', 'ring-indigo-500/50');
+                }
             }
         }
 
@@ -1221,42 +1531,40 @@
 
         function initializeDashboard() {
             const overlay = document.getElementById('loading-overlay');
-            overlay.style.display = 'flex';
+            const h2 = overlay.querySelector('h2');
             
-            console.log("Showing loading overlay...");
+            overlay.style.display = 'flex';
+            if (h2) h2.innerText = "PREPARING ANALYTICS";
+            
+            console.log("[INIT] Starting Dashboard Transition...");
 
-            // Give the browser a frame to render the overlay before we block the UI thread with processing
             setTimeout(() => {
                 try {
-                    console.log("Initializing Dashboard Logic...");
-                    
                     const uploadHub = document.getElementById('upload-hub');
                     const dashboardView = document.getElementById('dashboard-view');
                     
-                    // Nuclear Transition
-                    uploadHub.classList.add('hidden');
+                    if (!uploadHub || !dashboardView) return;
+
                     uploadHub.style.display = 'none';
-                    
                     dashboardView.style.display = 'grid';
                     dashboardView.classList.add('active');
                     
-                    // Heavy Processing
                     updateDashboardMetrics();
                     
-                    // Heavy UI render (Icons)
                     setTimeout(() => {
-                        switchView('overview'); // Ensure default view is showing
+                        switchView('overview');
                         lucide.createIcons();
-                        overlay.style.display = 'none'; // Done!
-                        console.log("Success: Dashboard Created.");
-                    }, 100);
-
+                        overlay.style.opacity = '0';
+                        setTimeout(() => {
+                            overlay.style.display = 'none';
+                            overlay.style.opacity = '1';
+                        }, 500);
+                    }, 500);
                 } catch (err) {
+                    console.error("[INIT] Error:", err);
                     overlay.style.display = 'none';
-                    console.error("Dashboard Init Error:", err);
-                    alert("เกิดข้อผิดพลาดในการเริ่มต้น Dashboard: " + err.message);
                 }
-            }, 100);
+            }, 800);
         }
 
         window.updateDashboardMetrics = function(filterBranch = 'all') {
@@ -1443,6 +1751,443 @@
 
         let currentDrilldownData = [];
         let currentDrilldownCat = '';
+
+        function openBranchModal(branchId) {
+            const modal = document.getElementById('branch-exec-modal');
+            const { target, mtd } = masterSession;
+            
+            const cleanId = (id) => String(id || '').replace(/\D/g, '');
+            const targetBranch = target.find(t => cleanId(t.id) === cleanId(branchId));
+            if (!targetBranch) return;
+
+            document.getElementById('branch-modal-name').innerText = targetBranch.name;
+            document.getElementById('branch-modal-id').innerText = `ID: ${targetBranch.id} • Executive Deep Dive`;
+
+            const branchMtd = mtd.filter(m => cleanId(m.branchId) === cleanId(branchId));
+            const pvlBrands = ['TITANV', 'BLUE BOX', 'MCDODO', 'Q PLUS', 'BASEUS', 'TECHPRO', 'KING KONG'];
+            
+            const categories = [
+                { name: 'Mac', code: '53', tar: targetBranch.macTarget },
+                { name: 'iPad', code: '54', tar: targetBranch.ipadTarget },
+                { name: 'iPhone', code: '48', tar: targetBranch.iphoneTarget },
+                { name: 'Watch', code: '72', tar: targetBranch.watchTarget },
+            ];
+
+            const mainHardware = ['72', '48', '53', '54'];
+            const actualBtbRows = branchMtd.filter(m => 
+                (m.brand || '').toUpperCase() === 'APPLE' && 
+                !mainHardware.includes(m.productCode) && 
+                !(m.productGroup || '').toUpperCase().includes('INSURANCE')
+            );
+            const actualBtb = actualBtbRows.reduce((s, r) => s + r.revenue, 0);
+            const unitsBtb = actualBtbRows.reduce((s, r) => s + (r.units || 0), 0);
+            
+            const exclude3rd = ['38', '41', '84', '64', '51', '49', '79'];
+            const actual3rdRows = branchMtd.filter(m => 
+                (m.brand || '').toUpperCase() !== 'APPLE' && 
+                !exclude3rd.includes(m.productCode) &&
+                !(m.productGroup || '').toUpperCase().includes('INSURANCE')
+            );
+            const actual3rd = actual3rdRows.reduce((s, r) => s + r.revenue, 0);
+            const units3rd = actual3rdRows.reduce((s, r) => s + (r.units || 0), 0);
+            
+            categories.push({ name: 'BTB', tar: targetBranch.btbTarget, actual: actualBtb, units: unitsBtb });
+            categories.push({ name: '3RD Party', tar: targetBranch.thirdPartyTarget, actual: actual3rd, units: units3rd });
+
+            // Hardware Bases for Attach Rates
+            const iphoneUnits = branchMtd.filter(m => m.productCode === '48').reduce((s, r) => s + (r.units || 0), 0);
+            const ipadUnits = branchMtd.filter(m => m.productCode === '54').reduce((s, r) => s + (r.units || 0), 0);
+            const hardwareUnits = iphoneUnits + ipadUnits;
+
+            // Focus Items Logic with Executive Targets
+            const focusItems = [
+                { name: 'Cover+', filter: (r) => r.productCode === '41' && !(r.skuCode || '').toUpperCase().includes('7CAREFREE'), base: iphoneUnits, analysis: 'unit', target: 25, red: 15 },
+                { name: 'Pencil', filter: (r) => (r.productDetail || '').toUpperCase().includes('PENCIL'), base: ipadUnits, analysis: 'unit', target: 85, red: 65 },
+                { name: 'Case iPhone', filter: (r) => r.productCode === '79' && (r.productGroup || '').toUpperCase().includes('CASE IPHONE'), base: iphoneUnits, analysis: 'unit', target: 60, red: 50 },
+                { name: 'PVL', filter: (r) => pvlBrands.includes((r.brand || '').toUpperCase()), base: units3rd, analysis: 'revenue', target: 10, red: 8 },
+                { name: 'Apple Care+', filter: (r) => r.productCode === '49' && !(r.skuCode || '').toUpperCase().includes('7CAREFREE'), base: hardwareUnits, analysis: 'unit', target: 20, red: 15 },
+                { name: 'UFUND', filter: (r) => (r.colAM || '').toUpperCase().includes('UFUND PERSONAL'), base: iphoneUnits, analysis: 'unit', target: 8, red: 5 },
+                { name: 'SIM (Unit)', filter: (r) => r.productCode === '84' || r.productCode === '103', isUnit: true, base: iphoneUnits, tar: targetBranch.simTarget, analysis: 'unit', target: 85, red: 85 },
+                { name: 'Insurance / Others', filter: (r) => (r.productGroup || '').toUpperCase().includes('INSURANCE'), isOther: true, analysis: 'revenue' }
+            ];
+
+            const now = new Date();
+            const currentDay = now.getDate();
+            const totalDaysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+
+            const tbody = document.getElementById('branch-modal-body');
+            tbody.innerHTML = categories.map(cat => {
+                const actual = cat.actual !== undefined ? cat.actual : branchMtd.filter(m => m.productCode === cat.code).reduce((s, r) => s + r.revenue, 0);
+                const tar = cat.tar || 0;
+                const units = cat.units !== undefined ? cat.units : branchMtd.filter(m => m.productCode === cat.code || (cat.name === 'BTB' && (m.brand || '').toUpperCase() === 'APPLE' && !mainHardware.includes(m.productCode))).reduce((s, r) => s + (r.units || 0), 0);
+                
+                const achPct = tar > 0 ? (actual / tar * 100) : 0;
+                const forecastBaht = currentDay > 0 ? (actual / currentDay * totalDaysInMonth) : 0;
+                const forecastPct = tar > 0 ? (forecastBaht / tar * 100) : 0;
+                
+                let achColor = 'text-rose-400';
+                if (achPct > 105) achColor = 'text-indigo-400';
+                else if (achPct >= 100) achColor = 'text-emerald-400';
+
+                return `
+                    <tr class="border-b border-white/5 hover:bg-white/5 transition-colors cursor-pointer group" onclick="openBranchSkuDrilldown('${branchId}', '${cat.name}', '${cat.name}')">
+                        <td class="p-4 text-sm font-bold text-white group-hover:text-indigo-400 flex items-center gap-2">
+                            ${cat.name}
+                            <i data-lucide="chevron-right" class="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity"></i>
+                        </td>
+                        <td class="p-4 text-right text-sm text-slate-400">${formatVal(tar)}</td>
+                        <td class="p-4 text-right text-sm font-bold text-white">${formatVal(actual)}</td>
+                        <td class="p-4 text-center">
+                            <span class="text-xs font-black ${achColor} bg-white/5 px-2 py-1 rounded">${achPct.toFixed(1)}%</span>
+                        </td>
+                        <td class="p-4 text-right text-sm text-indigo-300 font-bold">${formatUnit(units)}</td>
+                        <td class="p-4 text-right text-sm font-bold text-slate-300">${formatVal(forecastBaht)}</td>
+                        <td class="p-4 text-center">
+                            <span class="text-xs font-black text-slate-400">${forecastPct.toFixed(1)}%</span>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+
+            const fbody = document.getElementById('branch-focus-body');
+            fbody.innerHTML = focusItems.map(item => {
+                const rows = branchMtd.filter(item.filter);
+                const actual = rows.reduce((s,r) => s + (item.isUnit ? r.units : r.revenue), 0);
+                const units = rows.reduce((s,r) => s + (r.units || 0), 0);
+                
+                const tar = item.tar || 0;
+                const forecastBaht = currentDay > 0 ? (actual / currentDay * totalDaysInMonth) : 0;
+                const forecastPct = tar > 0 ? (forecastBaht / tar * 100) : 0;
+                
+                const attPct = (item.base && item.base > 0) ? (units / item.base * 100) : 0;
+
+                // MoM / YoY Logic for Focus
+                const { lastmonth, lastyear } = masterSession;
+                const lastMonthRows = lastmonth ? lastmonth.filter(m => cleanId(m.branchId) === cleanId(branchId)).filter(item.filter) : [];
+                const lastYearRows = lastyear ? lastyear.filter(m => cleanId(m.branchId) === cleanId(branchId)).filter(item.filter) : [];
+                
+                const lastMonthVal = lastMonthRows.reduce((s,r) => s + (item.isUnit ? r.units : r.revenue), 0);
+                const lastYearVal = lastYearRows.reduce((s,r) => s + (item.isUnit ? r.units : r.revenue), 0);
+                
+                const lastMonthUnits = lastMonthRows.reduce((s,r) => s + (r.units || 0), 0);
+                const lastYearUnits = lastYearRows.reduce((s,r) => s + (r.units || 0), 0);
+                
+                const momPct = lastMonthVal > 0 ? ((actual - lastMonthVal) / lastMonthVal * 100) : 0;
+                const yoyPct = lastYearVal > 0 ? ((actual - lastYearVal) / lastYearVal * 100) : 0;
+                
+                // Forecast & Diff logic based on preference
+                const isUnitAnalysis = item.analysis === 'unit';
+                const forecastOutput = currentDay > 0 ? ((isUnitAnalysis ? units : actual) / currentDay * totalDaysInMonth) : 0;
+                
+                // Diff based on Target (Goal distance)
+                let focusTargetVal = 0;
+                if (item.target && item.base > 0) {
+                    focusTargetVal = (item.target / 100) * item.base;
+                } else if (item.name === 'SIM (Unit)' && tar > 0) {
+                    focusTargetVal = tar;
+                }
+                const distToGoal = (focusTargetVal > 0 && isUnitAnalysis === !item.analysis.includes('revenue')) ? ((isUnitAnalysis ? units : actual) - focusTargetVal) : (isUnitAnalysis ? (units - lastMonthUnits) : (actual - lastMonthVal));
+
+                let attHtml = '-';
+                if (item.base) {
+                    let attColor = 'text-rose-400';
+                    if (attPct > item.target) attColor = 'text-indigo-400';
+                    else if (attPct >= item.red) attColor = 'text-emerald-400';
+                    attHtml = `<span class="text-xs font-black ${attColor} bg-white/5 px-2 py-1 rounded">${attPct.toFixed(1)}%</span>`;
+                }
+                
+                if (item.name === 'SIM (Unit)' && tar > 0) {
+                    const ach = (actual / tar) * 100;
+                    let simColor = 'text-rose-400 font-bold';
+                    if (ach > 105) simColor = 'text-indigo-400 font-black';
+                    else if (ach >= 85) simColor = 'text-emerald-400 font-black';
+                    attHtml = `<span class="text-xs ${simColor} bg-white/5 px-2 py-1 rounded">${ach.toFixed(0)}%</span>`;
+                }
+
+                const momColor = momPct > 0 ? 'text-emerald-400' : (momPct < 0 ? 'text-rose-400' : 'text-slate-500');
+                const yoyColor = yoyPct > 0 ? 'text-emerald-400' : (yoyPct < 0 ? 'text-rose-400' : 'text-slate-500');
+
+                return `
+                    <tr class="border-b border-white/5 hover:bg-white/5 transition-colors cursor-pointer group" onclick="openBranchSkuDrilldown('${branchId}', '${item.name}', '${item.name}')">
+                        <td class="p-4">
+                            <div class="flex items-center gap-2">
+                                <p class="text-sm font-bold text-white group-hover:text-rose-400">${item.name}</p>
+                                <i data-lucide="chevron-right" class="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity"></i>
+                            </div>
+                            <p class="text-[9px] text-slate-500 font-black uppercase tracking-widest">${item.isOther ? 'Misc' : 'Focus'}</p>
+                        </td>
+                        <td class="p-4 text-right">
+                            <p class="text-sm font-bold text-white">${item.isUnit ? '-' : formatVal(actual)}</p>
+                            <p class="text-[10px] text-indigo-300 font-bold">${formatUnit(units)} UNITS</p>
+                        </td>
+                        <td class="p-4 text-center">
+                            ${attHtml}
+                        </td>
+                        <td class="p-4 text-right">
+                            <p class="text-sm font-bold text-slate-300">
+                                ${isUnitAnalysis ? formatUnit(forecastOutput) : formatVal(forecastOutput)}
+                            </p>
+                            <p class="text-[10px] text-slate-500 font-bold">${forecastPct > 0 ? forecastPct.toFixed(1) + '%' : '-'}</p>
+                        </td>
+                        <td class="p-4 text-center">
+                            <div class="flex flex-col items-center">
+                                <div class="flex items-center gap-1">
+                                    <span class="text-[10px] font-black ${momColor}">${momPct > 0 ? '↑' : (momPct < 0 ? '↓' : '')} ${Math.abs(momPct).toFixed(1)}%</span>
+                                    <span class="text-[9px] text-slate-500">(${formatUnit(lastMonthUnits)})</span>
+                                </div>
+                                <div class="flex items-center gap-1">
+                                    <span class="text-[10px] font-black ${yoyColor}">${yoyPct > 0 ? '↑' : (yoyPct < 0 ? '↓' : '')} ${Math.abs(yoyPct).toFixed(1)}%</span>
+                                    <span class="text-[9px] text-slate-500">(${formatUnit(lastYearUnits)})</span>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="p-4 text-right">
+                            <span class="text-xs font-bold ${distToGoal >= 0 ? 'text-emerald-400' : 'text-rose-400'}">
+                                ${distToGoal >= 0 ? '+' : ''}${isUnitAnalysis ? formatUnit(distToGoal) : formatVal(distToGoal)}
+                            </span>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+
+            modal.classList.add('active');
+            lucide.createIcons();
+        }
+
+        let drilldownLevel = 1;
+        let drilldownContext = { branchId: '', filterName: '', title: '', brand: '', group: '', mapping: '', model: '' };
+        const drilldownHistory = [];
+
+        function goBackSku() {
+            if (drilldownHistory.length > 1) {
+                drilldownHistory.pop(); // Remove current level
+                const prev = drilldownHistory.pop(); // Get previous level
+                openBranchSkuDrilldown(prev.branchId, prev.filterName, prev.title, prev.level, prev.contextInfo, true);
+            } else {
+                closeSkuDrilldown();
+            }
+        }
+
+        function openBranchSkuDrilldown(branchId, filterName, title, level = 1, contextInfo = {}, isBack = false) {
+            if (!isBack) {
+                if (level === 1) drilldownHistory.length = 0;
+                drilldownHistory.push({ branchId, filterName, title, level, contextInfo });
+            }
+            const { mtd } = masterSession;
+            const cleanId = (id) => String(id || '').replace(/\D/g, '');
+            const branchData = mtd.filter(m => cleanId(m.branchId) === cleanId(branchId));
+            const pvlBrands = ['TITANV', 'BLUE BOX', 'MCDODO', 'Q PLUS', 'BASEUS', 'TECHPRO', 'KING KONG'];
+            
+            drilldownLevel = level;
+            drilldownContext = { ...drilldownContext, branchId, filterName, title, ...contextInfo };
+
+            let filtered;
+            const baseFilter = (m) => {
+                if (filterName === 'Mac') return m.productCode === '53';
+                if (filterName === 'iPad') return m.productCode === '54';
+                if (filterName === 'iPhone') return m.productCode === '48';
+                if (filterName === 'Watch') return m.productCode === '72';
+                if (filterName === 'BTB') {
+                    const mainHardware = ['72', '48', '53', '54'];
+                    return (m.brand || '').toUpperCase() === 'APPLE' && 
+                           !mainHardware.includes(m.productCode) && 
+                           !(m.productGroup || '').toUpperCase().includes('INSURANCE');
+                }
+                if (filterName === '3RD Party') {
+                    const exclude3rd = ['38', '41', '84', '64', '51', '49', '79'];
+                    return (m.brand || '').toUpperCase() !== 'APPLE' && !exclude3rd.includes(m.productCode);
+                }
+                if (filterName === 'Apple Care+') return m.productCode === '49' && !(m.skuCode || '').toUpperCase().includes('7CAREFREE');
+                if (filterName === 'Cover+') return m.productCode === '41' && !(m.skuCode || '').toUpperCase().includes('7CAREFREE');
+                if (filterName === 'Pencil') return (m.productDetail || '').toUpperCase().includes('PENCIL');
+                if (filterName === 'Case iPhone') return m.productCode === '79' && (m.productGroup || '').toUpperCase().includes('CASE IPHONE');
+                if (filterName === 'PVL') return pvlBrands.includes((m.brand || '').toUpperCase());
+                if (filterName === 'UFUND') return (m.colAM || '').toUpperCase().includes('UFUND PERSONAL');
+                if (filterName === 'SIM (Unit)') return m.productCode === '84' || m.productCode === '103';
+                return false;
+            };
+
+            filtered = branchData.filter(baseFilter);
+
+            const isPencil = filterName === 'Pencil';
+            const isCover = filterName === 'Cover+';
+            const isPVL = filterName === 'PVL';
+            const isUFUND = filterName === 'UFUND';
+            const is3rd = filterName === '3RD Party';
+            const isBTB = filterName === 'BTB';
+            
+            // Context Filtering Logic
+            if (is3rd) {
+                if (level >= 2 && drilldownContext.brand) filtered = filtered.filter(m => m.brand === drilldownContext.brand);
+                if (level >= 3 && drilldownContext.group) filtered = filtered.filter(m => m.productGroup === drilldownContext.group);
+                if (level >= 4 && drilldownContext.mapping) filtered = filtered.filter(m => m.brandMapping === drilldownContext.mapping);
+                if (level >= 5 && drilldownContext.model) filtered = filtered.filter(m => m.productDetail === drilldownContext.model);
+            } else if (isBTB) {
+                if (level >= 2 && drilldownContext.mapping) filtered = filtered.filter(m => m.brandMapping === drilldownContext.mapping);
+                if (level >= 3 && drilldownContext.group) filtered = filtered.filter(m => m.productGroup === drilldownContext.group);
+            } else if (isPencil || isCover) {
+                if (level >= 2 && drilldownContext.model) filtered = filtered.filter(m => m.productDetail === drilldownContext.model);
+            } else if (isPVL) {
+                if (level >= 2 && drilldownContext.brand) filtered = filtered.filter(m => m.brand === drilldownContext.brand);
+                if (level >= 3 && drilldownContext.group) filtered = filtered.filter(m => m.productGroup === drilldownContext.group);
+            } else if (isUFUND) {
+                if (level >= 2 && drilldownContext.am) filtered = filtered.filter(m => m.colAM === drilldownContext.am);
+                if (level >= 3 && drilldownContext.ar) filtered = filtered.filter(m => m.colAR === drilldownContext.ar);
+            } else {
+                if (level >= 2 && drilldownContext.group) filtered = filtered.filter(m => m.productGroup === drilldownContext.group);
+                if (level >= 3 && drilldownContext.model) filtered = filtered.filter(m => m.productDetail === drilldownContext.model);
+            }
+
+            if (!filtered || filtered.length === 0) return;
+
+            const map = {};
+            const isUnitMode = filterName.includes('Unit');
+            
+            filtered.forEach(r => {
+                let key, name, sub;
+                if (is3rd) {
+                    if (level === 1) { key = r.brand || 'No Brand'; name = key; sub = 'Brand (Col L)'; }
+                    else if (level === 2) { key = r.productGroup || 'No Group'; name = key; sub = 'Group (Col K)'; }
+                    else if (level === 3) { key = r.brandMapping || 'No Mapping'; name = key; sub = 'Mapping (Col J)'; }
+                    else if (level === 4) { key = r.productDetail || 'No Detail'; name = key; sub = 'Detail (Col M)'; }
+                    else { key = r.skuCode || r.productCode || 'ERR'; name = r.skuName || 'Unknown SKU'; sub = key; }
+                } else if (isBTB) {
+                    if (level === 1) { key = r.brandMapping || 'No Mapping'; name = key; sub = 'Mapping (Col J)'; }
+                    else if (level === 2) { key = r.productGroup || 'No Group'; name = key; sub = 'Group (Col K)'; }
+                    else { key = r.skuCode || r.productCode || 'ERR'; name = r.skuName || 'Unknown SKU'; sub = key; }
+                } else if (isPencil || isCover) {
+                    if (level === 1) { key = r.productDetail || 'No Detail'; name = key; sub = 'Detail (Col M)'; }
+                    else { key = r.skuCode || r.productCode || 'ERR'; name = r.skuName || 'Unknown SKU'; sub = key; }
+                } else if (isPVL) {
+                    if (level === 1) { key = r.brand || 'No Brand'; name = key; sub = 'Brand (Col L)'; }
+                    else if (level === 2) { key = r.productGroup || 'No Group'; name = key; sub = 'Group (Col K)'; }
+                    else { key = r.skuCode || r.productCode || 'ERR'; name = r.skuName || 'Unknown SKU'; sub = key; }
+                } else if (isUFUND) {
+                    if (level === 1) { key = r.colAM || 'No AM'; name = key; sub = 'Column AM'; }
+                    else if (level === 2) { key = r.colAR || 'No AR'; name = key; sub = 'Column AR'; }
+                    else { key = r.skuCode || r.productCode || 'ERR'; name = r.skuName || 'Unknown SKU'; sub = key; }
+                } else {
+                    if (level === 1) { key = r.productGroup || 'Group'; name = key; sub = 'Group (Col K)'; }
+                    else if (level === 2) { key = r.productDetail || 'Detail'; name = key; sub = 'Detail (Col M)'; }
+                    else { key = r.skuCode || r.productCode || 'ERR'; name = r.skuName || 'Unknown SKU'; sub = key; }
+                }
+
+                if (!map[key]) map[key] = { key, name, sub, revenue: 0, units: 0 };
+                map[key].revenue += r.revenue;
+                map[key].units += (r.units || 0);
+            });
+
+            const sortedItems = Object.values(map)
+                .filter(item => (isUnitMode ? item.units : item.revenue) > 0)
+                .sort((a,b) => isUnitMode ? b.units - a.units : b.revenue - a.revenue);
+            const totalMetric = sortedItems.reduce((s, r) => s + (isUnitMode ? r.units : r.revenue), 0);
+
+            const modal = document.getElementById('sku-drilldown-modal');
+            const skuList = document.getElementById('sku-list');
+            
+            // Subtitle / Breadcrumb logic
+            let subtitle = `Level ${level}: Exploration`;
+            if (is3rd) {
+                if (level === 1) subtitle = 'Choose Brand';
+                else if (level === 2) subtitle = `${drilldownContext.brand} > Groups`;
+                else if (level === 3) subtitle = `${drilldownContext.group} > Mapping`;
+                else if (level === 4) subtitle = `${drilldownContext.mapping} > Models`;
+                else subtitle = `${drilldownContext.model} > SKUs`;
+            } else if (isBTB) {
+                if (level === 1) subtitle = 'Choose Brand Mapping';
+                else if (level === 2) subtitle = `${drilldownContext.mapping} > Groups`;
+                else subtitle = `${drilldownContext.group} > SKUs`;
+            } else if (isPencil || isCover) {
+                if (level === 1) subtitle = 'Choose Product Model';
+                else subtitle = `${drilldownContext.model} > SKUs`;
+            } else if (isPVL) {
+                if (level === 1) subtitle = 'Choose Brand';
+                else if (level === 2) subtitle = `${drilldownContext.brand} > Groups`;
+                else subtitle = `${drilldownContext.group} > SKUs`;
+            } else if (isUFUND) {
+                if (level === 1) subtitle = 'Choose Column AM';
+                else if (level === 2) subtitle = `${drilldownContext.am} > Column AR`;
+                else subtitle = `${drilldownContext.ar} > SKUs`;
+            } else {
+                if (level === 1) subtitle = 'Category Groups';
+                else if (level === 2) subtitle = `${drilldownContext.group} > Models`;
+                else subtitle = `${drilldownContext.model} > SKUs`;
+            }
+
+            document.getElementById('sku-title').innerText = `${title} Deep Dive`;
+            document.getElementById('sku-subtitle').innerText = subtitle;
+            document.getElementById('sku-total-val').innerText = isUnitMode ? formatUnit(totalMetric) : formatVal(totalMetric);
+            
+            const backBtn = document.getElementById('sku-back-btn');
+            if (backBtn) backBtn.innerText = level === 1 ? 'Back to Category' : 'Previous Level';
+            
+            skuList.innerHTML = sortedItems.map(item => {
+                const metric = isUnitMode ? item.units : item.revenue;
+                const pct = totalMetric > 0 ? (metric / totalMetric * 100) : 0;
+                
+                let clickAction = '';
+                let finalLevel = 3;
+                if (is3rd) finalLevel = 5;
+                if (isPencil || isCover) finalLevel = 2;
+                
+                if (level < finalLevel) {
+                    let nextCtx = {};
+                    if (is3rd) {
+                        if (level === 1) nextCtx = { brand: item.key };
+                        else if (level === 2) nextCtx = { group: item.key };
+                        else if (level === 3) nextCtx = { mapping: item.key };
+                        else if (level === 4) nextCtx = { model: item.key };
+                    } else if (isBTB) {
+                        if (level === 1) nextCtx = { mapping: item.key };
+                        else if (level === 2) nextCtx = { group: item.key };
+                    } else if (isPencil || isCover) {
+                        if (level === 1) nextCtx = { model: item.key };
+                    } else if (isPVL) {
+                        if (level === 1) nextCtx = { brand: item.key };
+                        else if (level === 2) nextCtx = { group: item.key };
+                    } else if (isUFUND) {
+                        if (level === 1) nextCtx = { am: item.key };
+                        else if (level === 2) nextCtx = { ar: item.key };
+                    } else {
+                        if (level === 1) nextCtx = { group: item.key };
+                        else if (level === 2) nextCtx = { model: item.key };
+                    }
+                    clickAction = `onclick="openBranchSkuDrilldown('${branchId}', '${filterName}', '${title}', ${level + 1}, ${JSON.stringify(nextCtx).replace(/"/g, "&quot;")})"`;
+                }
+
+                return `
+                    <div class="sku-item ${level < finalLevel ? 'cursor-pointer hover:border-indigo-500/50 group/item' : ''}" ${clickAction}>
+                        <div class="flex justify-between items-start mb-2">
+                            <div>
+                                <div class="flex items-center gap-2">
+                                    <p class="text-white font-bold text-sm leading-tight group-hover/item:text-indigo-400">${item.name}</p>
+                                    ${level < finalLevel ? '<i data-lucide="chevron-right" class="w-3 h-3 text-indigo-500"></i>' : ''}
+                                </div>
+                                <p class="text-[10px] text-slate-500 font-black uppercase tracking-widest">${item.sub}</p>
+                            </div>
+                            <div class="text-right">
+                                <p class="text-sm font-black text-indigo-400">${isUnitMode ? formatUnit(metric) : formatVal(metric)}</p>
+                                <p class="text-[10px] text-slate-500 font-bold">${item.units} UNITS</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <div class="flex-1 bg-white/5 h-1.5 rounded-full overflow-hidden">
+                                <div class="bg-indigo-500 h-full rounded-full" style="width: ${pct}%"></div>
+                            </div>
+                            <span class="text-[10px] font-black text-slate-400 w-8 text-right">${pct.toFixed(0)}%</span>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            modal.classList.add('active');
+            modal.style.display = 'flex';
+            lucide.createIcons();
+        }
+
+        function closeBranchModal() {
+            document.getElementById('branch-exec-modal').classList.remove('active');
+        }
 
         function openCategoryDrilldown(catName, catCode) {
             const modal = document.getElementById('category-drilldown-modal');
@@ -1711,49 +2456,91 @@
             const totalDaysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
             const remainingDays = Math.max(1, totalDaysInMonth - currentDay);
             const elapsedPct = currentDay / totalDaysInMonth;
+
+            // Updated Urgency UI
+            const dayStr = now.getDate();
+            const monthStr = now.toLocaleString('en-US', { month: 'short' });
+            const yearStr = now.getFullYear();
             
+            const dateEl = document.getElementById('perf-current-date');
+            const daysEl = document.getElementById('perf-days-left');
+            if (dateEl) dateEl.innerText = `${dayStr} ${monthStr} ${yearStr}`;
+            if (daysEl) daysEl.innerText = `${remainingDays} Days Remaining`;
+
+            // Update Audit Tags
+            const auditEl = document.getElementById('data-audit-tags');
+            if (auditEl) {
+                const badge = (label, active) => `
+                    <div class="flex items-center gap-1.5 px-2 py-1 rounded-md border ${active ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' : 'bg-rose-500/10 border-rose-500/20 text-rose-400 opacity-50'}">
+                        <div class="w-1.5 h-1.5 rounded-full ${active ? 'bg-emerald-400 animate-pulse' : 'bg-rose-400'}"></div>
+                        <span class="text-[8px] font-black uppercase tracking-tighter">${label}</span>
+                    </div>
+                `;
+                auditEl.innerHTML = `
+                    ${badge('Target', target && target.length > 0)}
+                    ${badge('MTD', mtd && mtd.length > 0)}
+                    ${badge('MoM', lastmonth && lastmonth.length > 0)}
+                    ${badge('YoY', lastyear && lastyear.length > 0)}
+                `;
+            }
+
             // Robust ID helper: ID114 -> 114
             const cleanId = (id) => String(id || '').replace(/\D/g, '');
 
-            // Map MTD data by Branch ID (Numeric matching)
-            const mtdByBranch = {};
-            mtd.forEach(r => {
-                const bId = cleanId(r.branchId);
-                if (!bId) return;
-                if (!mtdByBranch[bId]) mtdByBranch[bId] = 0;
-                mtdByBranch[bId] += r.revenue;
-            });
+            // Mapping helpers for MoM/YoY logic
+            const buildBranchMap = (dataArr) => {
+                const mapById = {};
+                const mapByName = {};
+                (dataArr || []).forEach(r => {
+                    const bId = cleanId(r.id || r.branchId);
+                    const bName = String(r.name || r.branch || '').toUpperCase().trim();
+                    const rev = r.revenue || 0;
+                    
+                    if (bId) mapById[bId] = (mapById[bId] || 0) + rev;
+                    if (bName) mapByName[bName] = (mapByName[bName] || 0) + rev;
+                });
+                return { mapById, mapByName };
+            };
 
-            // Map MoM data
-            const lastMoByBranch = {};
-            (lastmonth || []).forEach(r => {
-                const bId = cleanId(r.id);
-                if (!bId) return;
-                if (!lastMoByBranch[bId]) lastMoByBranch[bId] = 0;
-                lastMoByBranch[bId] += r.revenue;
-            });
+            // Multi-Dimension Matching Helper
+            const getBranchMetric = (tId, tName, maps) => {
+                const bIdNum = cleanId(tId);
+                const bNameUp = String(tName || '').toUpperCase().trim();
+                
+                // 1. Exact ID Match
+                if (bIdNum && maps.mapById[bIdNum] !== undefined) return maps.mapById[bIdNum];
+                
+                // 2. Exact Name Match
+                if (bNameUp && maps.mapByName[bNameUp] !== undefined) return maps.mapByName[bNameUp];
+                
+                // 3. Fuzzy/Substring Mapping (The "Executive Match")
+                const mNames = Object.keys(maps.mapByName);
+                for (const mName of mNames) {
+                    // Match if Target Name contains Map Name (e.g. "ID114: PARAGON" contains "PARAGON")
+                    if (bNameUp.includes(mName) && mName.length > 3) return maps.mapByName[mName];
+                    // Match if Map Name contains Target Name (e.g. "STUDIO 7 PARAGON" contains "PARAGON")
+                    if (mName.includes(bNameUp) && bNameUp.length > 3) return maps.mapByName[mName];
+                    // Match if ID is found in Map Name
+                    if (bIdNum && mName.includes(bIdNum) && bIdNum.length >= 2) return maps.mapByName[mName];
+                }
+                return 0;
+            };
 
-            // Map YoY data
-            const lastYrByBranch = {};
-            (lastyear || []).forEach(r => {
-                const bId = cleanId(r.id);
-                if (!bId) return;
-                if (!lastYrByBranch[bId]) lastYrByBranch[bId] = 0;
-                lastYrByBranch[bId] += r.revenue;
-            });
+            const mtdMaps = buildBranchMap(mtd);
+            const lastMoMaps = buildBranchMap(lastmonth);
+            const lastYrMaps = buildBranchMap(lastyear);
 
             // Combine and Calculate
             const tableRows = target.map(t => {
-                const branchIdNumeric = cleanId(t.id);
-                const branchName = t.name;
+                const branchName = t.name || 'Unknown Branch';
                 const targetVal = t.target || 0;
-                const actualVal = mtdByBranch[branchIdNumeric] || 0;
-                const lastMoVal = lastMoByBranch[branchIdNumeric] || 0;
-                const lastYrVal = lastYrByBranch[branchIdNumeric] || 0;
+                
+                const actualVal = getBranchMetric(t.id, t.name, mtdMaps);
+                const lastMoVal = getBranchMetric(t.id, t.name, lastMoMaps);
+                const lastYrVal = getBranchMetric(t.id, t.name, lastYrMaps);
                 
                 const achPct = targetVal > 0 ? (actualVal / targetVal * 100) : 0;
                 
-                // Advanced Trend Metrics
                 const pScore = (targetVal > 0 && elapsedPct > 0) ? (actualVal / (targetVal * elapsedPct) * 100) : 0;
                 const currentRunRate = currentDay > 0 ? (actualVal / currentDay) : 0;
                 const requiredRunRate = remainingDays > 0 ? (Math.max(0, targetVal - actualVal) / remainingDays) : 0;
@@ -1782,7 +2569,7 @@
                     diffBaht: diffBaht,
                     momPct, momDiff, yoyPct, yoyDiff
                 };
-            }).sort((a, b) => b.actual - a.actual);
+            }).sort((a, b) => b.achPct - a.achPct);
 
             tbody.innerHTML = tableRows.map(row => {
                 const achColor = row.achPct >= 100 ? 'text-emerald-400' : 'text-amber-400';
@@ -1792,8 +2579,11 @@
                 return `
                     <tr class="border-b border-white/5 hover:bg-white/5 transition-colors group">
                         <td class="p-4 pl-5">
-                            <div class="flex flex-col">
-                                <span class="text-sm font-bold text-white">${row.name}</span>
+                            <div class="flex flex-col cursor-pointer hover:translate-x-1 transition-transform group/name" onclick="openBranchModal('${row.id}')">
+                                <div class="flex items-center gap-1.5">
+                                    <span class="text-sm font-bold text-white group-hover/name:text-indigo-400 transition-colors">${row.name}</span>
+                                    <i data-lucide="external-link" class="w-2.5 h-2.5 text-slate-500 group-hover/name:text-indigo-400 opacity-0 group-hover/name:opacity-100 transition-all"></i>
+                                </div>
                                 <span class="text-[9px] text-slate-500 font-black uppercase tracking-widest">${row.id}</span>
                             </div>
                         </td>
@@ -1810,8 +2600,11 @@
                         </td>
                         <td class="p-4 text-right">
                             <div class="flex flex-col items-end">
-                                <span class="text-sm font-black text-emerald-400">${formatVal(row.requiredRunRate)}</span>
-                                <span class="text-[8px] text-slate-500 font-bold uppercase">per day</span>
+                                ${row.actual >= row.target ? 
+                                    '<span class="text-[9px] font-black text-emerald-500 bg-emerald-500/10 px-1.5 py-0.5 rounded ring-1 ring-emerald-500/20">TARGET MET</span>' : 
+                                    `<span class="text-sm font-black text-emerald-400">${formatVal(row.requiredRunRate)}</span>
+                                     <span class="text-[8px] text-slate-500 font-bold uppercase">per day</span>`
+                                }
                             </div>
                         </td>
                         <td class="p-4 text-right text-xs font-bold text-slate-300">

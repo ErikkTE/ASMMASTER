@@ -1,16 +1,41 @@
-# React + Vite
+# ASM MASTER Executive Dashboard
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A precision analytics platform for branch and executive performance management.
 
-Currently, two official plugins are available:
+## 📊 Business Intelligence & Calculation Logic
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+This dashboard uses professional-grade sensing to identify and calculate performance metrics. Below is the technical logic for strategic Focus items:
 
-## React Compiler
+### Strategic Focus Items
+| Item | Detection Logic | Column Reference |
+| :--- | :--- | :--- |
+| **UFUND** | Content matches **"UFUND PERSONAL"** | Column `AM` |
+| **PVL** | Specific Brand Mapping (TITANV, Blue Box, etc.) | Column `L` |
+| **Case iPhone** | Product Code: **79** & Group: **"Case iPhone"** | Col `I` & `K` |
+| **SIM (Unit)** | Product Code: **84** or **103** | Column `I` |
+| **BTB** | Brand: **APPLE** AND Product Code NOT in **[54,72,48,53]** (Exclude **INSURANCE**) | Column `L`, `I`, `K` |
+| **Cover+ (ATT)** | `Units / iPhone Units` | Column `I` & `A` (Source) |
+| **AC+ (ATT)** | `Units / (iPhone + iPad Units)` | Column `I` (Source) |
+| **Pencil (ATT)** | `Units / iPad Units` | Column `I` (Source) |
+| **Case iPhone (ATT)** | `Units / iPhone Units` | Column `I` & `K` (Source) |
+| **UFUND (ATT)** | `Units / iPhone Units` | Column `AM` (Source) |
+| **PVL (ATT)** | `Units / Total 3RD Units` | Column `L` (Source) |
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+### Attach Rate (ATT%) Calculation
+To provide meaningful executive insights, Focus metrics are calculated relative to hardware unit sales:
+- **Cover+ %ATT**: `(Cover+ Units / iPhone Units) * 100`
+- **Apple Care+ %ATT**: `(AC+ Units / (iPhone + iPad Units)) * 100`
+- **Pencil %ATT**: `(Pencil Units / iPad Units) * 100`
+- **Case iPhone %ATT**: `(Case Units / iPhone Units) * 100`
+- **UFUND %ATT**: `(UFUND Units / iPhone Units) * 100`
+- **PVL %ATT**: `(PVL Units / Total 3RD Units) * 100`
 
-## Expanding the ESLint configuration
+Detailed logic and system specifications can be found in the [Business Intelligence Logic Documentation](file:///Users/et/.gemini/antigravity/brain/e8f8bf09-febe-4dd8-91c6-df4901d02839/bi_logic_documentation.md).
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+## 🚀 Getting Started
+1. Launch the dashboard using `start_dashboard.command`.
+2. Upload your data assets (Target, MTD, Today, MoM, YoY).
+3. Use the **Executive Deep Dive** per branch for granular SKU analysis.
+
+---
+*Built with High-Intelligence Data Sensing Technology.*
