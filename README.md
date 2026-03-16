@@ -21,6 +21,21 @@ This dashboard uses professional-grade sensing to identify and calculate perform
 | **UFUND (ATT)** | `Units / iPhone Units` | Column `AM` (Source) |
 | **PVL (ATT)** | `Units / Total 3RD Units` | Column `L` (Source) |
 
+### 📂 Category Counting Logic (Standardized)
+These rules are applied to all primary analysis tables, dashboard cards, and drilldowns to ensure 100% logic consistency:
+
+> [!IMPORTANT]
+> **Grand Totals (Actual)** in all summary cards and the branch comparison table **strictly exclude** the **Other** category (Insurance/Service) to reflect only core business performance.
+
+| Category | Inclusion Logic (Sensing Filters) | Primary Columns |
+| :--- | :--- | :--- |
+| **BTB** | Brand: **APPLE** or **BEATS** AND Code NOT in **[54,72,48,53]** (Exclude **OTHER**) | `L`, `I`, `J`, `K` |
+| **3RD Party** | Brand NOT in **[APPLE, BEATS]** AND Code NOT in **[54,72,48,53]** (Exclude **OTHER**) | `L`, `I`, `J`, `K` |
+| **Other** | Group (Col K) contains **"INSURANCE"** OR Mapping (Col J) contains **"SERVICE"** | `K`, `J` |
+
+*Main Hardware Codes: 53 (Mac), 54 (iPad), 48 (iPhone), 72 (Watch).
+*Focus Codes: 38, 41, 84, 103, 64, 51, 49, 79.
+
 ### Attach Rate (ATT%) Calculation
 To provide meaningful executive insights, Focus metrics are calculated relative to hardware unit sales:
 - **Cover+ %ATT**: `(Cover+ Units / iPhone Units) * 100`

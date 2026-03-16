@@ -93,6 +93,19 @@
             50% { transform: translateY(-20px); }
         }
 
+        @keyframes forecast-glow {
+            0%, 100% { box-shadow: 0 0 10px rgba(99, 102, 241, 0.2), inset 0 0 5px rgba(99, 102, 241, 0.1); border-color: rgba(99, 102, 241, 0.4); }
+            50% { box-shadow: 0 0 25px rgba(99, 102, 241, 0.6), inset 0 0 15px rgba(99, 102, 241, 0.3); border-color: rgba(99, 102, 241, 0.8); }
+        }
+
+        @keyframes forecast-pulse {
+            0%, 100% { opacity: 1; border-color: rgba(244, 63, 94, 0.3); shadow: none; }
+            50% { opacity: 0.8; border-color: rgba(244, 63, 94, 0.8); box-shadow: 0 0 20px rgba(244, 63, 94, 0.4); }
+        }
+
+        .forecast-perfect { animation: forecast-glow 3s ease-in-out infinite; border-width: 2px !important; }
+        .forecast-danger { animation: forecast-pulse 2s ease-in-out infinite; border-width: 2px !important; }
+
         .dashboard-container {
             display: none; /* Default hidden */
             position: fixed;
@@ -282,8 +295,8 @@
             transform: scale(1) translateY(0);
         }
 
-        /* SKU Modal */
-        #sku-drilldown-modal {
+        /* SKU & Focus Modal */
+        #sku-drilldown-modal, #focus-drilldown-modal {
             display: none;
             position: fixed;
             inset: 0;
@@ -297,7 +310,7 @@
             padding: 1rem;
         }
 
-        #sku-drilldown-modal.active {
+        #sku-drilldown-modal.active, #focus-drilldown-modal.active {
             display: flex;
             opacity: 1;
         }
@@ -468,6 +481,72 @@
             </div>
         </div>
     </div>
+    <!-- Focus Item Drilldown Modal -->
+    <div id="focus-drilldown-modal" class="sku-modal">
+        <div class="modal-content-wrapper max-w-5xl shadow-2xl overflow-hidden">
+            <div class="p-8 border-b border-white/10 flex justify-between items-center bg-slate-800/50">
+                <div class="flex items-center gap-4">
+                    <div id="focus-modal-icon" class="w-12 h-12 rounded-2xl flex items-center justify-center bg-indigo-500/10 border border-indigo-500/20 text-indigo-400">
+                        <i data-lucide="target" class="w-6 h-6"></i>
+                    </div>
+                    <div>
+                        <h3 id="focus-modal-title" class="text-3xl font-black text-white mb-0.5 tracking-tight uppercase">Focus Item Overview</h3>
+                        <p id="focus-modal-subtitle" class="text-slate-400 font-medium">Branch Performance Breakdown</p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-2">
+                    <button onclick="copyFocusSummary()" class="p-2 bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-400 rounded-lg border border-indigo-500/20 transition-all flex items-center gap-2 text-[10px] font-black uppercase tracking-widest">
+                        <i data-lucide="file-text" class="w-4 h-4"></i>
+                        Summary
+                    </button>
+                    <button onclick="captureFocusDrilldown()" class="p-2 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 rounded-lg border border-emerald-500/20 transition-all flex items-center gap-2 text-[10px] font-black uppercase tracking-widest">
+                        <i data-lucide="camera" class="w-4 h-4"></i>
+                        Capture
+                    </button>
+                    <button onclick="closeFocusDrilldown()" class="w-12 h-12 rounded-full bg-white/5 hover:bg-rose-500/20 hover:text-rose-400 text-slate-400 transition-all flex items-center justify-center border border-white/10 ml-2">
+                        <i data-lucide="x" class="w-6 h-6"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <div class="p-0 overflow-hidden">
+                <div class="max-h-[70vh] overflow-y-auto custom-scrollbar">
+                    <table class="w-full text-left border-collapse">
+                        <thead class="sticky top-0 z-20 bg-slate-900 shadow-sm border-b border-white/5">
+                            <tr class="bg-slate-900">
+                                <th class="p-5 text-[10px] font-black uppercase tracking-widest text-slate-500">Branch Name</th>
+                                <th id="col-actual-label" class="p-5 text-right text-[10px] font-black uppercase tracking-widest text-slate-500">Actual Units</th>
+                                <th id="col-ach-label" class="p-5 text-center text-[10px] font-black uppercase tracking-widest text-slate-500">% ATT</th>
+                                <th id="col-forecast-label" class="p-5 text-right text-[10px] font-black uppercase tracking-widest text-indigo-300">Forecast (UNT)</th>
+                                <th class="p-5 text-center text-[10px] font-black uppercase tracking-widest text-slate-500">Growth (MoM/YoY)</th>
+                                <th id="col-diff-label" class="p-5 text-right text-[10px] font-black uppercase tracking-widest text-white">Vs Goal</th>
+                            </tr>
+                        </thead>
+                        <tbody id="focus-modal-body" class="divide-y divide-white/[0.03]">
+                            <!-- Populated by JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="bg-slate-950 p-6 border-t border-white/10 flex justify-between items-center">
+                <div class="flex gap-10">
+                    <div class="bg-white/5 px-4 py-2 rounded-xl border border-white/5">
+                        <p class="text-[9px] font-black uppercase text-slate-500 mb-0.5">Total Aggregated</p>
+                        <p id="focus-total-mtd" class="text-xl font-black text-white">0</p>
+                    </div>
+                    <div class="bg-white/5 px-4 py-2 rounded-xl border border-white/5" title="Simple average of achievement % across all branches with sales base">
+                        <p class="text-[9px] font-black uppercase text-slate-500 mb-0.5">Average P-Rate</p>
+                        <p id="focus-avg-ach" class="text-xl font-black text-emerald-400">0%</p>
+                    </div>
+                </div>
+                <button onclick="closeFocusDrilldown()" class="px-8 py-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] transition-all shadow-lg shadow-indigo-500/20 active:scale-95">
+                    Close Breakdown
+                </button>
+            </div>
+        </div>
+    </div>
+
 
     <!-- Branch Executive Drilldown Modal -->
     <div id="branch-exec-modal">
@@ -712,202 +791,474 @@
                     <h2 class="text-4xl font-bold mb-2">Group Performance</h2>
                     <p class="text-slate-400">Aggregated insights across <span id="branch-count" class="text-white font-bold">0</span> branches</p>
                 </div>
+                <button onclick="captureDashboard()" class="flex items-center gap-2 px-6 py-3 bg-white/5 border border-white/10 rounded-2xl hover:bg-white/10 transition-all font-black text-[10px] uppercase tracking-widest text-indigo-400 group">
+                    <i data-lucide="camera" class="w-4 h-4 group-hover:scale-110 transition-transform"></i>
+                    Capture Dashboard
+                </button>
             </div>
 
             <!-- Group Target Summary Bar -->
-            <div id="target-summary-grid" class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-3 mb-10">
-                <!-- Total Target -->
-                <div class="card p-3 border-amber-500/20 bg-amber-500/5 group hover:border-amber-500/40 transition-all flex flex-col justify-between">
-                    <div class="flex items-center justify-between mb-2 text-amber-400">
-                        <div class="flex items-center gap-1.5">
-                            <i data-lucide="target" class="w-4 h-4"></i>
-                            <span class="text-[10px] font-black uppercase tracking-wider">Grand Total</span>
+            <!-- Row 1: Group & General (4 Cards) -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                <!-- Grand Total -->
+                <div onclick="openCategoryDrilldown('total', 'all')" class="card p-3 border-amber-500/20 bg-amber-500/5 transition-all flex flex-col justify-between cursor-pointer hover:border-amber-500/40 hover:bg-amber-500/10">
+                    <div class="flex items-center justify-between mb-3">
+                        <div class="flex items-center gap-2 text-amber-500">
+                            <i data-lucide="target" class="w-5 h-5 opacity-70"></i>
+                            <span class="text-[11px] font-black uppercase tracking-widest text-[#facc15]">Grand Total</span>
                         </div>
-                        <span class="text-[9px] font-black bg-amber-500/20 px-1.5 py-0.5 rounded text-amber-300" id="ach-total-pct">0%</span>
+                        <div id="ach-total-pct" class="min-w-[42px] h-[42px] flex items-center justify-center text-sm font-black rounded-full bg-amber-500/10 border-2 border-amber-500/20 text-amber-500">0%</div>
                     </div>
-                    <div class="mb-3">
-                        <p class="text-[9px] text-slate-400 font-bold uppercase tracking-tighter mb-0.5">MTD Actual</p>
-                        <p class="text-base font-bold text-white leading-tight" id="actual-total-revenue">฿0</p>
-                    </div>
-                    <div class="space-y-1.5">
+                    
+                    <div id="card-total" class="space-y-3">
                         <div class="flex justify-between items-end">
-                            <p class="text-[8px] text-slate-500 font-bold uppercase">Target</p>
-                            <p class="text-[8px] text-slate-300 font-bold" id="total-total-target">฿0</p>
+                            <div>
+                                <p class="text-[8px] text-slate-500 font-black uppercase tracking-tighter opacity-70 mb-0.5">MTD Revenue</p>
+                                <p id="actual-total-revenue" class="text-lg font-black text-white leading-none">฿0</p>
+                            </div>
+                            <div class="text-right">
+                                <p class="text-[8px] text-slate-500 font-black uppercase tracking-tighter opacity-70 mb-0.5">Target</p>
+                                <p id="total-total-target" class="text-[11px] font-black text-slate-400">฿0</p>
+                            </div>
                         </div>
-                        <div class="w-full bg-slate-800/50 h-1 rounded-full overflow-hidden">
-                            <div id="bar-total-ach" class="bg-amber-500 h-full rounded-full transition-all duration-1000 shadow-[0_0_8px_rgba(245,158,11,0.5)]" style="width: 0%"></div>
+
+                        <div class="grid grid-cols-2 gap-2 bg-white/5 rounded-xl p-2 border border-white/5">
+                            <div class="flex flex-col">
+                                <span class="text-[7px] text-slate-500 font-bold uppercase mb-0.5">Forecast (฿)</span>
+                                <span id="fc-total-baht" class="text-[10px] font-black text-indigo-300">฿0</span>
+                            </div>
+                            <div class="flex flex-col items-end">
+                                <span class="text-[7px] text-slate-500 font-bold uppercase mb-0.5">Ach Forecast</span>
+                                <span id="fc-total-pct" class="text-[10px] font-black text-indigo-300">0%</span>
+                            </div>
+                        </div>
+                        
+                        <div class="relative h-1.5 w-full bg-slate-800 rounded-full overflow-hidden">
+                            <div id="bar-total-ach" class="h-full bg-amber-500 rounded-full shadow-[0_0_10px_rgba(245,158,11,0.4)] transition-all duration-1000" style="width: 0%"></div>
+                        </div>
+
+                        <div class="flex justify-between items-center py-2 px-2 bg-white/5 rounded-xl border border-white/5">
+                            <div class="flex flex-col">
+                                <span id="actual-total-units" class="text-[9px] font-black text-white">0 Units</span>
+                            </div>
+                            <div class="flex gap-3">
+                                <div id="mom-total-stat" class="flex flex-col items-end">
+                                    <span class="text-[7px] text-slate-500 font-bold uppercase mb-0.5">MoM</span>
+                                    <span class="text-[9px] font-black text-slate-400">--</span>
+                                </div>
+                                <div id="yoy-total-stat" class="flex flex-col items-end border-l border-white/10 pl-3">
+                                    <span class="text-[7px] text-slate-500 font-bold uppercase mb-0.5">YoY</span>
+                                    <span class="text-[9px] font-black text-slate-400">--</span>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- Mac -->
-                <div onclick="openCategoryDrilldown('mac', 53)" class="card p-3 border-indigo-500/20 bg-indigo-500/5 group hover:border-indigo-500/40 transition-all flex flex-col justify-between cursor-pointer hover:scale-[1.02] active:scale-[0.98]">
-                    <div class="flex items-center justify-between mb-2 text-indigo-400">
-                        <div class="flex items-center gap-1.5">
-                            <i data-lucide="monitor" class="w-4 h-4"></i>
-                            <span class="text-[10px] font-black uppercase tracking-wider">Mac</span>
+                <!-- 3RD Party -->
+                <div onclick="openCategoryDrilldown('3rd', '3rd')" class="card p-3 border-purple-500/20 bg-purple-500/5 transition-all flex flex-col justify-between cursor-pointer hover:border-purple-500/40 hover:bg-purple-500/10">
+                    <div class="flex items-center justify-between mb-3">
+                        <div class="flex items-center gap-2 text-purple-400">
+                            <i data-lucide="package" class="w-5 h-5 opacity-70"></i>
+                            <span class="text-[11px] font-black uppercase tracking-widest">3rd Party</span>
                         </div>
-                        <span class="text-[9px] font-black bg-indigo-500/20 px-1.5 py-0.5 rounded text-indigo-300" id="ach-mac-pct">0%</span>
+                        <div id="ach-3rd-pct" class="min-w-[42px] h-[42px] flex items-center justify-center text-sm font-black rounded-full bg-purple-500/10 border-2 border-purple-500/20 text-purple-400">0%</div>
                     </div>
-                    <div class="mb-3">
-                        <p class="text-[9px] text-slate-400 font-bold uppercase tracking-tighter mb-0.5">MTD Actual</p>
-                        <p class="text-base font-bold text-white leading-tight" id="actual-mac-revenue">฿0</p>
-                    </div>
-                    <div class="space-y-1.5">
+                    
+                    <div id="card-3rd" class="space-y-3">
                         <div class="flex justify-between items-end">
-                            <p class="text-[8px] text-slate-500 font-bold uppercase">Target</p>
-                            <p class="text-[8px] text-slate-300 font-bold" id="total-mac-target">฿0</p>
+                            <div>
+                                <p class="text-[8px] text-slate-500 font-black uppercase tracking-tighter opacity-70 mb-0.5">MTD Revenue</p>
+                                <p id="actual-3rd-revenue" class="text-lg font-black text-white leading-none">฿0</p>
+                            </div>
+                            <div class="text-right">
+                                <p class="text-[8px] text-slate-500 font-black uppercase tracking-tighter opacity-70 mb-0.5">Target</p>
+                                <p id="total-3rd-target" class="text-[11px] font-black text-slate-400">฿0</p>
+                            </div>
                         </div>
-                        <div class="w-full bg-slate-800/50 h-1 rounded-full overflow-hidden">
-                            <div id="bar-mac-ach" class="bg-indigo-500 h-full rounded-full transition-all duration-1000 shadow-[0_0_8px_rgba(99,102,241,0.5)]" style="width: 0%"></div>
-                        </div>
-                    </div>
-                </div>
 
-                <!-- iPad -->
-                <div onclick="openCategoryDrilldown('ipad', 54)" class="card p-3 border-emerald-500/20 bg-emerald-500/5 group hover:border-emerald-500/40 transition-all flex flex-col justify-between cursor-pointer hover:scale-[1.02] active:scale-[0.98]">
-                    <div class="flex items-center justify-between mb-2 text-emerald-400">
-                        <div class="flex items-center gap-1.5">
-                            <i data-lucide="tablet-2" class="w-4 h-4"></i>
-                            <span class="text-[10px] font-black uppercase tracking-wider">iPad</span>
+                        <div class="grid grid-cols-2 gap-2 bg-white/5 rounded-xl p-2 border border-white/5">
+                            <div class="flex flex-col">
+                                <span class="text-[7px] text-slate-500 font-bold uppercase mb-0.5">Forecast (฿)</span>
+                                <span id="fc-3rd-baht" class="text-[10px] font-black text-indigo-300">฿0</span>
+                            </div>
+                            <div class="flex flex-col items-end">
+                                <span class="text-[7px] text-slate-500 font-bold uppercase mb-0.5">Ach Forecast</span>
+                                <span id="fc-3rd-pct" class="text-[10px] font-black text-indigo-300">0%</span>
+                            </div>
                         </div>
-                        <span class="text-[9px] font-black bg-emerald-500/20 px-1.5 py-0.5 rounded text-emerald-300" id="ach-ipad-pct">0%</span>
-                    </div>
-                    <div class="mb-3">
-                        <p class="text-[9px] text-slate-400 font-bold uppercase tracking-tighter mb-0.5">MTD Actual</p>
-                        <p class="text-base font-bold text-white leading-tight" id="actual-ipad-revenue">฿0</p>
-                    </div>
-                    <div class="space-y-1.5">
-                        <div class="flex justify-between items-end">
-                            <p class="text-[8px] text-slate-500 font-bold uppercase">Target</p>
-                            <p class="text-[8px] text-slate-300 font-bold" id="total-ipad-target">฿0</p>
+                        
+                        <div class="relative h-1.5 w-full bg-slate-800 rounded-full overflow-hidden">
+                            <div id="bar-3rd-ach" class="h-full bg-purple-500 rounded-full transition-all duration-1000" style="width: 0%"></div>
                         </div>
-                        <div class="w-full bg-slate-800/50 h-1 rounded-full overflow-hidden">
-                            <div id="bar-ipad-ach" class="bg-emerald-500 h-full rounded-full transition-all duration-1000 shadow-[0_0_8px_rgba(16,185,129,0.5)]" style="width: 0%"></div>
-                        </div>
-                    </div>
-                </div>
 
-                <!-- iPhone -->
-                <div onclick="openCategoryDrilldown('iphone', 48)" class="card p-3 border-rose-500/20 bg-rose-500/5 group hover:border-rose-500/40 transition-all flex flex-col justify-between cursor-pointer hover:scale-[1.02] active:scale-[0.98]">
-                    <div class="flex items-center justify-between mb-2 text-rose-400">
-                        <div class="flex items-center gap-1.5">
-                            <i data-lucide="smartphone" class="w-4 h-4"></i>
-                            <span class="text-[10px] font-black uppercase tracking-wider">iPhone</span>
-                        </div>
-                        <span class="text-[9px] font-black bg-rose-500/20 px-1.5 py-0.5 rounded text-rose-300" id="ach-iphone-pct">0%</span>
-                    </div>
-                    <div class="mb-3">
-                        <p class="text-[9px] text-slate-400 font-bold uppercase tracking-tighter mb-0.5">MTD Actual</p>
-                        <p class="text-base font-bold text-white leading-tight" id="actual-iphone-revenue">฿0</p>
-                    </div>
-                    <div class="space-y-1.5">
-                        <div class="flex justify-between items-end">
-                            <p class="text-[8px] text-slate-500 font-bold uppercase">Target</p>
-                            <p class="text-[8px] text-slate-300 font-bold" id="total-iphone-target">฿0</p>
-                        </div>
-                        <div class="w-full bg-slate-800/50 h-1 rounded-full overflow-hidden">
-                            <div id="bar-iphone-ach" class="bg-rose-500 h-full rounded-full transition-all duration-1000 shadow-[0_0_8px_rgba(244,63,94,0.5)]" style="width: 0%"></div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Watch -->
-                <div onclick="openCategoryDrilldown('watch', 72)" class="card p-3 border-cyan-500/20 bg-cyan-500/5 group hover:border-cyan-500/40 transition-all flex flex-col justify-between cursor-pointer hover:scale-[1.02] active:scale-[0.98]">
-                    <div class="flex items-center justify-between mb-2 text-cyan-400">
-                        <div class="flex items-center gap-1.5">
-                            <i data-lucide="watch" class="w-4 h-4"></i>
-                            <span class="text-[10px] font-black uppercase tracking-wider">Watch</span>
-                        </div>
-                        <span class="text-[9px] font-black bg-cyan-500/20 px-1.5 py-0.5 rounded text-cyan-300" id="ach-watch-pct">0%</span>
-                    </div>
-                    <div class="mb-3">
-                        <p class="text-[9px] text-slate-400 font-bold uppercase tracking-tighter mb-0.5">MTD Actual</p>
-                        <p class="text-base font-bold text-white leading-tight" id="actual-watch-revenue">฿0</p>
-                    </div>
-                    <div class="space-y-1.5">
-                        <div class="flex justify-between items-end">
-                            <p class="text-[8px] text-slate-500 font-bold uppercase">Target</p>
-                            <p class="text-[8px] text-slate-300 font-bold" id="total-watch-target">฿0</p>
-                        </div>
-                        <div class="w-full bg-slate-800/50 h-1 rounded-full overflow-hidden">
-                            <div id="bar-watch-ach" class="bg-cyan-500 h-full rounded-full transition-all duration-1000 shadow-[0_0_8px_rgba(6,182,212,0.5)]" style="width: 0%"></div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- 3RD PARTY -->
-                <div onclick="openCategoryDrilldown('3rd', '3RD')" class="card p-3 border-purple-500/20 bg-purple-500/5 group hover:border-purple-500/40 transition-all flex flex-col justify-between cursor-pointer hover:scale-[1.02] active:scale-[0.98]">
-                    <div class="flex items-center justify-between mb-2 text-purple-400">
-                        <div class="flex items-center gap-1.5">
-                            <i data-lucide="shopping-bag" class="w-4 h-4"></i>
-                            <span class="text-[10px] font-black uppercase tracking-wider">3RD Party</span>
-                        </div>
-                        <span class="text-[9px] font-black bg-purple-500/20 px-1.5 py-0.5 rounded text-purple-300" id="ach-3rd-pct">0%</span>
-                    </div>
-                    <div class="mb-3">
-                        <p class="text-[9px] text-slate-400 font-bold uppercase tracking-tighter mb-0.5">MTD Actual</p>
-                        <p class="text-base font-bold text-white leading-tight" id="actual-3rd-revenue">฿0</p>
-                    </div>
-                    <div class="space-y-1.5">
-                        <div class="flex justify-between items-end">
-                            <p class="text-[8px] text-slate-500 font-bold uppercase">Target</p>
-                            <p class="text-[8px] text-slate-300 font-bold" id="total-3rd-target">฿0</p>
-                        </div>
-                        <div class="w-full bg-slate-800/50 h-1 rounded-full overflow-hidden">
-                            <div id="bar-3rd-ach" class="bg-purple-500 h-full rounded-full transition-all duration-1000 shadow-[0_0_8px_rgba(168,85,247,0.5)]" style="width: 0%"></div>
+                        <div class="flex justify-between items-center py-2 px-2 bg-white/5 rounded-xl border border-white/5">
+                            <div class="flex flex-col">
+                                <span id="actual-3rd-units" class="text-[9px] font-black text-white">0 Units</span>
+                            </div>
+                            <div class="flex gap-3">
+                                <div id="mom-3rd-stat" class="flex flex-col items-end">
+                                    <span class="text-[7px] text-slate-500 font-bold uppercase mb-0.5">MoM</span>
+                                    <span class="text-[9px] font-black text-slate-400">--</span>
+                                </div>
+                                <div id="yoy-3rd-stat" class="flex flex-col items-end border-l border-white/10 pl-3">
+                                    <span class="text-[7px] text-slate-500 font-bold uppercase mb-0.5">YoY</span>
+                                    <span class="text-[9px] font-black text-slate-400">--</span>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
 
                 <!-- BTB -->
-                <div onclick="openCategoryDrilldown('btb', 'BTB')" class="card p-3 border-blue-500/20 bg-blue-500/5 group hover:border-blue-500/40 transition-all flex flex-col justify-between cursor-pointer hover:scale-[1.02] active:scale-[0.98]">
-                    <div class="flex items-center justify-between mb-2 text-blue-400">
-                        <div class="flex items-center gap-1.5">
-                            <i data-lucide="briefcase" class="w-4 h-4"></i>
-                            <span class="text-[10px] font-black uppercase tracking-wider">BTB</span>
+                <div onclick="openCategoryDrilldown('btb', 'btb')" class="card p-3 border-blue-500/20 bg-blue-500/5 transition-all flex flex-col justify-between cursor-pointer hover:border-blue-500/40 hover:bg-blue-500/10">
+                    <div class="flex items-center justify-between mb-3">
+                        <div class="flex items-center gap-2 text-blue-400">
+                            <i data-lucide="briefcase" class="w-5 h-5 opacity-70"></i>
+                            <span class="text-[11px] font-black uppercase tracking-widest">BTB</span>
                         </div>
-                        <span class="text-[9px] font-black bg-blue-500/20 px-1.5 py-0.5 rounded text-blue-300" id="ach-btb-pct">0%</span>
+                        <div id="ach-btb-pct" class="min-w-[42px] h-[42px] flex items-center justify-center text-sm font-black rounded-full bg-blue-500/10 border-2 border-blue-500/20 text-blue-400">0%</div>
                     </div>
-                    <div class="mb-3">
-                        <p class="text-[9px] text-slate-400 font-bold uppercase tracking-tighter mb-0.5">MTD Actual</p>
-                        <p class="text-base font-bold text-white leading-tight" id="actual-btb-revenue">฿0</p>
-                    </div>
-                    <div class="space-y-1.5">
+                    
+                    <div id="card-btb" class="space-y-3">
                         <div class="flex justify-between items-end">
-                            <p class="text-[8px] text-slate-500 font-bold uppercase">Target</p>
-                            <p class="text-[8px] text-slate-300 font-bold" id="total-btb-target">฿0</p>
+                            <div>
+                                <p class="text-[8px] text-slate-500 font-black uppercase tracking-tighter opacity-70 mb-0.5">MTD Revenue</p>
+                                <p id="actual-btb-revenue" class="text-lg font-black text-white leading-none">฿0</p>
+                            </div>
+                            <div class="text-right">
+                                <p class="text-[8px] text-slate-500 font-black uppercase tracking-tighter opacity-70 mb-0.5">Target</p>
+                                <p id="total-btb-target" class="text-[11px] font-black text-slate-400">฿0</p>
+                            </div>
                         </div>
-                        <div class="w-full bg-slate-800/50 h-1 rounded-full overflow-hidden">
-                            <div id="bar-btb-ach" class="bg-blue-500 h-full rounded-full transition-all duration-1000 shadow-[0_0_8px_rgba(59,130,246,0.5)]" style="width: 0%"></div>
+
+                        <div class="grid grid-cols-2 gap-2 bg-white/5 rounded-xl p-2 border border-white/5">
+                            <div class="flex flex-col">
+                                <span class="text-[7px] text-slate-500 font-bold uppercase mb-0.5">Forecast (฿)</span>
+                                <span id="fc-btb-baht" class="text-[10px] font-black text-indigo-300">฿0</span>
+                            </div>
+                            <div class="flex flex-col items-end">
+                                <span class="text-[7px] text-slate-500 font-bold uppercase mb-0.5">Ach Forecast</span>
+                                <span id="fc-btb-pct" class="text-[10px] font-black text-indigo-300">0%</span>
+                            </div>
+                        </div>
+                        
+                        <div class="relative h-1.5 w-full bg-slate-800 rounded-full overflow-hidden">
+                            <div id="bar-btb-ach" class="h-full bg-blue-500 rounded-full transition-all duration-1000" style="width: 0%"></div>
+                        </div>
+
+                        <div class="flex justify-between items-center py-2 px-2 bg-white/5 rounded-xl border border-white/5">
+                            <div class="flex flex-col">
+                                <span id="actual-btb-units" class="text-[9px] font-black text-white">0 Units</span>
+                            </div>
+                            <div class="flex gap-3">
+                                <div id="mom-btb-stat" class="flex flex-col items-end">
+                                    <span class="text-[7px] text-slate-500 font-bold uppercase mb-0.5">MoM</span>
+                                    <span class="text-[9px] font-black text-slate-400">--</span>
+                                </div>
+                                <div id="yoy-btb-stat" class="flex flex-col items-end border-l border-white/10 pl-3">
+                                    <span class="text-[7px] text-slate-500 font-bold uppercase mb-0.5">YoY</span>
+                                    <span class="text-[9px] font-black text-slate-400">--</span>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
 
                 <!-- SIM -->
-                <div onclick="openCategoryDrilldown('sim', 84)" class="card p-3 border-orange-500/20 bg-orange-500/5 group hover:border-orange-500/40 transition-all flex flex-col justify-between cursor-pointer hover:scale-[1.02] active:scale-[0.98]">
-                    <div class="flex items-center justify-between mb-2 text-orange-400">
-                        <div class="flex items-center gap-1.5">
-                            <i data-lucide="radio" class="w-4 h-4"></i>
-                            <span class="text-[10px] font-black uppercase tracking-wider">SIM</span>
+                <div onclick="openCategoryDrilldown('sim', 84)" class="card p-3 border-rose-500/20 bg-rose-500/5 transition-all flex flex-col justify-between cursor-pointer hover:border-rose-500/40 hover:bg-rose-500/10">
+                    <div class="flex items-center justify-between mb-3">
+                        <div class="flex items-center gap-2 text-rose-400">
+                            <i data-lucide="rss" class="w-5 h-5 opacity-70"></i>
+                            <span class="text-[11px] font-black uppercase tracking-widest">Sim</span>
                         </div>
-                        <span class="text-[9px] font-black bg-orange-500/20 px-1.5 py-0.5 rounded text-orange-300" id="ach-sim-pct">0%</span>
+                        <div id="ach-sim-pct" class="min-w-[42px] h-[42px] flex items-center justify-center text-sm font-black rounded-full bg-rose-500/10 border-2 border-rose-500/20 text-rose-400">0%</div>
                     </div>
-                    <div class="mb-3">
-                        <p class="text-[9px] text-slate-400 font-bold uppercase tracking-tighter mb-0.5">MTD Actual</p>
-                        <p class="text-base font-bold text-white leading-tight" id="actual-sim-revenue">0</p>
-                    </div>
-                    <div class="space-y-1.5">
+                    
+                    <div id="card-sim" class="space-y-3">
                         <div class="flex justify-between items-end">
-                            <p class="text-[8px] text-slate-500 font-bold uppercase">Target</p>
-                            <p class="text-[8px] text-slate-300 font-bold" id="total-sim-target">0</p>
+                            <div>
+                                <p class="text-[8px] text-slate-500 font-black uppercase tracking-tighter opacity-70 mb-0.5">MTD Units</p>
+                                <p id="actual-sim-revenue" class="text-lg font-black text-white leading-none">0</p>
+                            </div>
+                            <div class="text-right">
+                                <p class="text-[8px] text-slate-500 font-black uppercase tracking-tighter opacity-70 mb-0.5">Target</p>
+                                <p id="total-sim-target" class="text-[11px] font-black text-slate-400">0</p>
+                            </div>
                         </div>
-                        <div class="w-full bg-slate-800/50 h-1 rounded-full overflow-hidden">
-                            <div id="bar-sim-ach" class="bg-orange-500 h-full rounded-full transition-all duration-1000 shadow-[0_0_8px_rgba(249,115,22,0.5)]" style="width: 0%"></div>
+
+                        <div class="grid grid-cols-2 gap-2 bg-white/5 rounded-xl p-2 border border-white/5">
+                            <div class="flex flex-col">
+                                <span class="text-[7px] text-slate-500 font-bold uppercase mb-0.5">Forecast (Unit)</span>
+                                <span id="fc-sim-baht" class="text-[10px] font-black text-indigo-300">0</span>
+                            </div>
+                            <div class="flex flex-col items-end">
+                                <span class="text-[7px] text-slate-500 font-bold uppercase mb-0.5">Ach Forecast</span>
+                                <span id="fc-sim-pct" class="text-[10px] font-black text-indigo-300">0%</span>
+                            </div>
+                        </div>
+                        
+                        <div class="relative h-1.5 w-full bg-slate-800 rounded-full overflow-hidden">
+                            <div id="bar-sim-ach" class="h-full bg-rose-500 rounded-full transition-all duration-1000" style="width: 0%"></div>
+                        </div>
+
+                        <div class="flex justify-between items-center py-2 px-2 bg-white/5 rounded-xl border border-white/5">
+                            <div class="flex flex-col">
+                                <span class="text-[9px] font-black text-white leading-none tracking-tight">Focus Unit Tracking</span>
+                            </div>
+                            <div class="flex gap-3">
+                                <div id="mom-sim-stat" class="flex flex-col items-end">
+                                    <span class="text-[7px] text-slate-500 font-bold uppercase mb-0.5">MoM</span>
+                                    <span class="text-[9px] font-black text-slate-400">--</span>
+                                </div>
+                                <div id="yoy-sim-stat" class="flex flex-col items-end border-l border-white/10 pl-3">
+                                    <span class="text-[7px] text-slate-500 font-bold uppercase mb-0.5">YoY</span>
+                                    <span class="text-[9px] font-black text-slate-400">--</span>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
+            </div>
+
+            <!-- Row 2: Hardware (4 Cards) -->
+            <div id="target-summary-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-10">
+                <!-- Mac -->
+                <div onclick="openCategoryDrilldown('mac', 53)" class="card p-3 border-indigo-500/20 bg-indigo-500/5 transition-all flex flex-col justify-between cursor-pointer hover:border-indigo-500/40 hover:bg-indigo-500/10">
+                    <div class="flex items-center justify-between mb-3">
+                        <div class="flex items-center gap-2 text-indigo-400">
+                            <i data-lucide="laptop" class="w-5 h-5 opacity-70"></i>
+                            <span class="text-[11px] font-black uppercase tracking-widest">Mac</span>
+                        </div>
+                        <div id="ach-mac-pct" class="min-w-[42px] h-[42px] flex items-center justify-center text-sm font-black rounded-full bg-indigo-500/10 border-2 border-indigo-500/20 text-indigo-400">0%</div>
+                    </div>
+                    
+                    <div id="card-mac" class="space-y-3">
+                        <div class="flex justify-between items-end">
+                            <div>
+                                <p class="text-[8px] text-slate-500 font-black uppercase tracking-tighter opacity-70 mb-0.5">MTD Revenue</p>
+                                <p id="actual-mac-revenue" class="text-lg font-black text-white leading-none">฿0</p>
+                            </div>
+                            <div class="text-right">
+                                <p class="text-[8px] text-slate-500 font-black uppercase tracking-tighter opacity-70 mb-0.5">Target</p>
+                                <p id="total-mac-target" class="text-[11px] font-black text-slate-400">฿0</p>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-2 bg-white/5 rounded-xl p-2 border border-white/5">
+                            <div class="flex flex-col">
+                                <span class="text-[7px] text-slate-500 font-bold uppercase mb-0.5">Forecast (฿)</span>
+                                <span id="fc-mac-baht" class="text-[10px] font-black text-indigo-300">฿0</span>
+                            </div>
+                            <div class="flex flex-col items-end">
+                                <span class="text-[7px] text-slate-500 font-bold uppercase mb-0.5">Ach Forecast</span>
+                                <span id="fc-mac-pct" class="text-[10px] font-black text-indigo-300">0%</span>
+                            </div>
+                        </div>
+                        
+                        <div class="relative h-1.5 w-full bg-slate-800 rounded-full overflow-hidden">
+                            <div id="bar-mac-ach" class="h-full bg-indigo-500 rounded-full transition-all duration-1000" style="width: 0%"></div>
+                        </div>
+
+                        <div class="flex justify-between items-center py-2 px-2 bg-white/5 rounded-xl border border-white/5">
+                            <div class="flex flex-col">
+                                <div class="flex items-center gap-2">
+                                    <span id="actual-mac-units" class="text-[9px] font-black text-white">0 Units</span>
+                                    <div class="h-1 w-1 bg-slate-600 rounded-full"></div>
+                                    <span id="weekly-avg-mac" class="text-[8px] font-black text-indigo-400 uppercase">Avg: 0/Wk</span>
+                                </div>
+                            </div>
+                            <div class="flex gap-3">
+                                <div id="mom-mac-stat" class="flex flex-col items-end">
+                                    <span class="text-[7px] text-slate-500 font-bold uppercase mb-0.5">MoM</span>
+                                    <span class="text-[9px] font-black text-slate-400">--</span>
+                                </div>
+                                <div id="yoy-mac-stat" class="flex flex-col items-end border-l border-white/10 pl-3">
+                                    <span class="text-[7px] text-slate-500 font-bold uppercase mb-0.5">YoY</span>
+                                    <span class="text-[9px] font-black text-slate-400">--</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
+
+                <!-- iPad -->
+                <div onclick="openCategoryDrilldown('ipad', 54)" class="card p-3 border-emerald-500/20 bg-emerald-500/5 transition-all flex flex-col justify-between cursor-pointer hover:border-emerald-500/40 hover:bg-emerald-500/10">
+                    <div class="flex items-center justify-between mb-3">
+                        <div class="flex items-center gap-2 text-emerald-400">
+                            <i data-lucide="tablet-2" class="w-5 h-5 opacity-70"></i>
+                            <span class="text-[11px] font-black uppercase tracking-widest">iPad</span>
+                        </div>
+                        <div id="ach-ipad-pct" class="min-w-[42px] h-[42px] flex items-center justify-center text-sm font-black rounded-full bg-emerald-500/10 border-2 border-emerald-500/20 text-emerald-400">0%</div>
+                    </div>
+                    
+                    <div id="card-ipad" class="space-y-3">
+                        <div class="flex justify-between items-end">
+                            <div>
+                                <p class="text-[8px] text-slate-500 font-black uppercase tracking-tighter opacity-70 mb-0.5">MTD Revenue</p>
+                                <p id="actual-ipad-revenue" class="text-lg font-black text-white leading-none">฿0</p>
+                            </div>
+                            <div class="text-right">
+                                <p class="text-[8px] text-slate-500 font-black uppercase tracking-tighter opacity-70 mb-0.5">Target</p>
+                                <p id="total-ipad-target" class="text-[11px] font-black text-slate-400">฿0</p>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-2 bg-white/5 rounded-xl p-2 border border-white/5">
+                            <div class="flex flex-col">
+                                <span class="text-[7px] text-slate-500 font-bold uppercase mb-0.5">Forecast (฿)</span>
+                                <span id="fc-ipad-baht" class="text-[10px] font-black text-indigo-300">฿0</span>
+                            </div>
+                            <div class="flex flex-col items-end">
+                                <span class="text-[7px] text-slate-500 font-bold uppercase mb-0.5">Ach Forecast</span>
+                                <span id="fc-ipad-pct" class="text-[10px] font-black text-indigo-300">0%</span>
+                            </div>
+                        </div>
+                        
+                        <div class="relative h-1.5 w-full bg-slate-800 rounded-full overflow-hidden">
+                            <div id="bar-ipad-ach" class="h-full bg-emerald-500 rounded-full transition-all duration-1000" style="width: 0%"></div>
+                        </div>
+
+                        <div class="flex justify-between items-center py-2 px-2 bg-white/5 rounded-xl border border-white/5">
+                            <div class="flex flex-col">
+                                <div class="flex items-center gap-2">
+                                    <span id="actual-ipad-units" class="text-[9px] font-black text-white">0 Units</span>
+                                    <div class="h-1 w-1 bg-slate-600 rounded-full"></div>
+                                    <span id="weekly-avg-ipad" class="text-[8px] font-black text-emerald-400 uppercase">Avg: 0/Wk</span>
+                                </div>
+                            </div>
+                            <div class="flex gap-3">
+                                <div id="mom-ipad-stat" class="flex flex-col items-end">
+                                    <span class="text-[7px] text-slate-500 font-bold uppercase mb-0.5">MoM</span>
+                                    <span class="text-[9px] font-black text-slate-400">--</span>
+                                </div>
+                                <div id="yoy-ipad-stat" class="flex flex-col items-end border-l border-white/10 pl-3">
+                                    <span class="text-[7px] text-slate-500 font-bold uppercase mb-0.5">YoY</span>
+                                    <span class="text-[9px] font-black text-slate-400">--</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- iPhone -->
+                <div onclick="openCategoryDrilldown('iphone', 48)" class="card p-3 border-rose-500/20 bg-rose-500/5 transition-all flex flex-col justify-between cursor-pointer hover:border-rose-500/40 hover:bg-rose-500/10">
+                    <div class="flex items-center justify-between mb-3">
+                        <div class="flex items-center gap-2 text-rose-400">
+                            <i data-lucide="smartphone" class="w-5 h-5 opacity-70"></i>
+                            <span class="text-[11px] font-black uppercase tracking-widest">iPhone</span>
+                        </div>
+                        <div id="ach-iphone-pct" class="min-w-[42px] h-[42px] flex items-center justify-center text-sm font-black rounded-full bg-rose-500/10 border-2 border-rose-500/20 text-rose-400">0%</div>
+                    </div>
+                    
+                    <div id="card-iphone" class="space-y-3">
+                        <div class="flex justify-between items-end">
+                            <div>
+                                <p class="text-[8px] text-slate-500 font-black uppercase tracking-tighter opacity-70 mb-0.5">MTD Revenue</p>
+                                <p id="actual-iphone-revenue" class="text-lg font-black text-white leading-none">฿0</p>
+                            </div>
+                            <div class="text-right">
+                                <p class="text-[8px] text-slate-500 font-black uppercase tracking-tighter opacity-70 mb-0.5">Target</p>
+                                <p id="total-iphone-target" class="text-[11px] font-black text-slate-400">฿0</p>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-2 bg-white/5 rounded-xl p-2 border border-white/5">
+                            <div class="flex flex-col">
+                                <span class="text-[7px] text-slate-500 font-bold uppercase mb-0.5">Forecast (฿)</span>
+                                <span id="fc-iphone-baht" class="text-[10px] font-black text-indigo-300">฿0</span>
+                            </div>
+                            <div class="flex flex-col items-end">
+                                <span class="text-[7px] text-slate-500 font-bold uppercase mb-0.5">Ach Forecast</span>
+                                <span id="fc-iphone-pct" class="text-[10px] font-black text-indigo-300">0%</span>
+                            </div>
+                        </div>
+                        
+                        <div class="relative h-1.5 w-full bg-slate-800 rounded-full overflow-hidden">
+                            <div id="bar-iphone-ach" class="h-full bg-rose-500 rounded-full transition-all duration-1000" style="width: 0%"></div>
+                        </div>
+
+                        <div class="flex justify-between items-center py-2 px-2 bg-white/5 rounded-xl border border-white/5">
+                            <div class="flex flex-col">
+                                <div class="flex items-center gap-2">
+                                    <span id="actual-iphone-units" class="text-[9px] font-black text-white">0 Units</span>
+                                    <div class="h-1 w-1 bg-slate-600 rounded-full"></div>
+                                    <span id="weekly-avg-iphone" class="text-[8px] font-black text-rose-400 uppercase">Avg: 0/Wk</span>
+                                </div>
+                            </div>
+                            <div class="flex gap-3">
+                                <div id="mom-iphone-stat" class="flex flex-col items-end">
+                                    <span class="text-[7px] text-slate-500 font-bold uppercase mb-0.5">MoM</span>
+                                    <span class="text-[9px] font-black text-slate-400">--</span>
+                                </div>
+                                <div id="yoy-iphone-stat" class="flex flex-col items-end border-l border-white/10 pl-3">
+                                    <span class="text-[7px] text-slate-500 font-bold uppercase mb-0.5">YoY</span>
+                                    <span class="text-[9px] font-black text-slate-400">--</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Watch -->
+                <div onclick="openCategoryDrilldown('watch', 72)" class="card p-3 border-cyan-500/20 bg-cyan-500/5 transition-all flex flex-col justify-between cursor-pointer hover:border-cyan-500/40 hover:bg-cyan-500/10">
+                    <div class="flex items-center justify-between mb-3">
+                        <div class="flex items-center gap-2 text-cyan-400">
+                            <i data-lucide="watch" class="w-5 h-5 opacity-70"></i>
+                            <span class="text-[11px] font-black uppercase tracking-widest">Watch</span>
+                        </div>
+                        <div id="ach-watch-pct" class="min-w-[42px] h-[42px] flex items-center justify-center text-sm font-black rounded-full bg-cyan-500/10 border-2 border-cyan-500/20 text-cyan-400">0%</div>
+                    </div>
+                    
+                    <div id="card-watch" class="space-y-3">
+                        <div class="flex justify-between items-end">
+                            <div>
+                                <p class="text-[8px] text-slate-500 font-black uppercase tracking-tighter opacity-70 mb-0.5">MTD Revenue</p>
+                                <p id="actual-watch-revenue" class="text-lg font-black text-white leading-none">฿0</p>
+                            </div>
+                            <div class="text-right">
+                                <p class="text-[8px] text-slate-500 font-black uppercase tracking-tighter opacity-70 mb-0.5">Target</p>
+                                <p id="total-watch-target" class="text-[11px] font-black text-slate-400">฿0</p>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-2 bg-white/5 rounded-xl p-2 border border-white/5">
+                            <div class="flex flex-col">
+                                <span class="text-[7px] text-slate-500 font-bold uppercase mb-0.5">Forecast (฿)</span>
+                                <span id="fc-watch-baht" class="text-[10px] font-black text-indigo-300">฿0</span>
+                            </div>
+                            <div class="flex flex-col items-end">
+                                <span class="text-[7px] text-slate-500 font-bold uppercase mb-0.5">Ach Forecast</span>
+                                <span id="fc-watch-pct" class="text-[10px] font-black text-indigo-300">0%</span>
+                            </div>
+                        </div>
+                        
+                        <div class="relative h-1.5 w-full bg-slate-800 rounded-full overflow-hidden">
+                            <div id="bar-watch-ach" class="h-full bg-cyan-500 rounded-full transition-all duration-1000" style="width: 0%"></div>
+                        </div>
+
+                        <div class="flex justify-between items-center py-2 px-2 bg-white/5 rounded-xl border border-white/5">
+                            <div class="flex flex-col">
+                                <div class="flex items-center gap-2">
+                                    <span id="actual-watch-units" class="text-[9px] font-black text-white">0 Units</span>
+                                    <div class="h-1 w-1 bg-slate-600 rounded-full"></div>
+                                    <span id="weekly-avg-watch" class="text-[8px] font-black text-cyan-400 uppercase">Avg: 0/Wk</span>
+                                </div>
+                            </div>
+                            <div class="flex gap-3">
+                                <div id="mom-watch-stat" class="flex flex-col items-end">
+                                    <span class="text-[7px] text-slate-500 font-bold uppercase mb-0.5">MoM</span>
+                                    <span class="text-[9px] font-black text-slate-400">--</span>
+                                </div>
+                                <div id="yoy-watch-stat" class="flex flex-col items-end border-l border-white/10 pl-3">
+                                    <span class="text-[7px] text-slate-500 font-bold uppercase mb-0.5">YoY</span>
+                                    <span class="text-[9px] font-black text-slate-400">--</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
                 <!-- Focus & Attach Box -->
                 <div class="col-span-full mt-4">
@@ -921,56 +1272,11 @@
                             <span class="text-xs font-black uppercase tracking-[0.2em]">Focus & Attach Performance</span>
                         </div>
 
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-8 relative z-10">
-                            <!-- Cover+ -->
-                            <div class="space-y-4">
-                                <div class="flex justify-between items-end">
-                                    <div>
-                                        <p class="text-[10px] text-slate-500 font-black uppercase tracking-widest mb-1">Cover+</p>
-                                        <h4 class="text-2xl font-black text-white" id="focus-cover-units">0 <span class="text-[10px] text-slate-500 font-bold uppercase ml-1">Units</span></h4>
-                                    </div>
-                                    <div class="text-right">
-                                        <p class="text-[10px] text-amber-400 font-bold mb-1" id="focus-cover-rev">฿0</p>
-                                        <span class="text-[9px] bg-amber-500/20 text-amber-400 px-2 py-0.5 rounded-full font-black" id="focus-cover-rate">0% ATTACH</span>
-                                    </div>
-                                </div>
-                                <div class="w-full bg-slate-800/50 h-2 rounded-full overflow-hidden">
-                                    <div id="bar-cover-attach" class="bg-amber-500 h-full rounded-full transition-all duration-1000 shadow-[0_0_10px_rgba(245,158,11,0.4)]" style="width: 0%"></div>
-                                </div>
-                            </div>
-
-                            <!-- AC+ -->
-                            <div class="space-y-4 border-x border-white/5 px-8">
-                                <div class="flex justify-between items-end">
-                                    <div>
-                                        <p class="text-[10px] text-slate-500 font-black uppercase tracking-widest mb-1">AppleCare+</p>
-                                        <h4 class="text-2xl font-black text-white" id="focus-ac-units">0 <span class="text-[10px] text-slate-500 font-bold uppercase ml-1">Units</span></h4>
-                                    </div>
-                                    <div class="text-right">
-                                        <p class="text-[10px] text-indigo-400 font-bold mb-1" id="focus-ac-rev">฿0</p>
-                                        <span class="text-[9px] bg-indigo-500/20 text-indigo-400 px-2 py-0.5 rounded-full font-black" id="focus-ac-rate">0% ATTACH</span>
-                                    </div>
-                                </div>
-                                <div class="w-full bg-slate-800/50 h-2 rounded-full overflow-hidden">
-                                    <div id="bar-ac-attach" class="bg-indigo-500 h-full rounded-full transition-all duration-1000 shadow-[0_0_10px_rgba(99,102,241,0.4)]" style="width: 0%"></div>
-                                </div>
-                            </div>
-
-                            <!-- Pencil -->
-                            <div class="space-y-4">
-                                <div class="flex justify-between items-end">
-                                    <div>
-                                        <p class="text-[10px] text-slate-500 font-black uppercase tracking-widest mb-1">Apple Pencil</p>
-                                        <h4 class="text-2xl font-black text-white" id="focus-pencil-units">0 <span class="text-[10px] text-slate-500 font-bold uppercase ml-1">Units</span></h4>
-                                    </div>
-                                    <div class="text-right">
-                                        <p class="text-[10px] text-emerald-400 font-bold mb-1" id="focus-pencil-rev">฿0</p>
-                                        <span class="text-[9px] bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded-full font-black" id="focus-pencil-rate">0% ATTACH</span>
-                                    </div>
-                                </div>
-                                <div class="w-full bg-slate-800/50 h-2 rounded-full overflow-hidden">
-                                    <div id="bar-pencil-attach" class="bg-emerald-500 h-full rounded-full transition-all duration-1000 shadow-[0_0_10px_rgba(16,185,129,0.4)]" style="width: 0%"></div>
-                                </div>
+                        <div id="focus-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 relative z-10">
+                            <!-- Populated dynamically by JS -->
+                            <div class="col-span-full py-12 flex flex-col items-center opacity-20">
+                                <i data-lucide="loader-2" class="w-8 h-8 animate-spin mb-2"></i>
+                                <span class="text-[10px] font-black uppercase tracking-widest text-slate-500">Wait for data audit...</span>
                             </div>
                         </div>
                     </div>
@@ -1016,12 +1322,12 @@
                                         <th class="p-5 text-[10px] font-black uppercase tracking-widest text-slate-500 text-right">Target</th>
                                         <th class="p-5 text-[10px] font-black uppercase tracking-widest text-slate-500 text-right">Actual</th>
                                         <th class="p-5 text-[10px] font-black uppercase tracking-widest text-slate-500 text-center">Ach %</th>
-                                        <th class="p-5 text-[10px] font-black uppercase tracking-widest text-indigo-400 text-center">P-Score</th>
                                         <th class="p-5 text-[10px] font-black uppercase tracking-widest text-emerald-400 text-right">Daily Req.</th>
-                                        <th class="p-5 text-[10px] font-black uppercase tracking-widest text-slate-500 text-right">MoM %</th>
-                                        <th class="p-5 text-[10px] font-black uppercase tracking-widest text-slate-500 text-right">YoY %</th>
-                                        <th class="p-5 text-[10px] font-black uppercase tracking-widest text-slate-500 text-right">Forecast</th>
-                                        <th class="p-5 text-[10px] font-black uppercase tracking-widest text-slate-500 text-right">Diff (฿)</th>
+                                        <th class="p-5 text-[10px] font-black uppercase tracking-widest text-indigo-400 text-center">P-Score</th>
+                                        <th class="p-5 text-[10px] font-black uppercase tracking-widest text-indigo-300 text-right">Forecast</th>
+                                        <th class="p-5 text-[10px] font-black uppercase tracking-widest text-slate-500 text-right">MoM (+/-)</th>
+                                        <th class="p-5 text-[10px] font-black uppercase tracking-widest text-slate-500 text-right">YoY (+/-)</th>
+                                        <th class="p-5 text-[10px] font-black uppercase tracking-widest text-white text-right">Diff (฿)</th>
                                     </tr>
                                 </thead>
                                 <tbody id="comparison-table-body">
@@ -1580,145 +1886,368 @@
             // 1. Filtering MTD Raw Data
             const filteredMtdRaw = mtd.filter(m => isMatch(m.name));
 
-            // 2. Category Actuals Calculation (Product Codes: iPhone=48, Mac=53, iPad=54, Watch=72, SIM=84)
-            const getActualByCode = (code) => filteredMtdRaw
-                .filter(m => m.productCode === String(code))
-                .reduce((sum, r) => sum + r.revenue, 0);
+            // 2. Category Calculation Helper
+            const getCategoryData = (dataArr, isSim = false) => {
+                const results = {
+                    total: { units: 0, revenue: 0 },
+                    mac: { units: 0, revenue: 0 },
+                    ipad: { units: 0, revenue: 0 },
+                    iphone: { units: 0, revenue: 0 },
+                    watch: { units: 0, revenue: 0 },
+                    '3rd': { units: 0, revenue: 0 },
+                    btb: { units: 0, revenue: 0 },
+                    sim: { units: 0, revenue: 0 }
+                };
 
-            const actualTotal = filteredMtdRaw.reduce((sum, r) => sum + r.revenue, 0);
-            const actualMac = getActualByCode(53);
-            const actualIpad = getActualByCode(54);
-            const actualIphone = getActualByCode(48);
-            const actualWatch = getActualByCode(72);
-            
-            // SIM Logic: Use Column C (Units) instead of Revenue (Column E)
-            const actualSim = filteredMtdRaw
-                .filter(m => m.productCode === '84')
-                .reduce((sum, r) => sum + r.units, 0);
-            
-            // 3RD Logic: (Brand != APPLE) AND (Code NOT IN {38, 41, 84, 64, 51})
-            const exclude3rd = ['38', '41', '84', '64', '51'];
-            const actual3rd = filteredMtdRaw
-                .filter(m => (m.brand || '').toUpperCase() !== 'APPLE' && !exclude3rd.includes(m.productCode))
-                .reduce((sum, r) => sum + r.revenue, 0);
+                const mainHardware = ['72', '48', '53', '54'];
+                // Standard PVL Brands List (Unified)
+                const PVL_BRANDS = ['TITANV', 'BLUE BOX', 'MCDODO', 'Q PLUS', 'BASEUS', 'TECHPRO', 'KING KONG'];
 
-            // BTB Logic: (Brand == APPLE) AND (Code NOT IN {72, 48, 53, 54})
-            const mainHardware = ['72', '48', '53', '54'];
-            const actualBtb = filteredMtdRaw
-                .filter(m => (m.brand || '').toUpperCase() === 'APPLE' && !mainHardware.includes(m.productCode))
-                .reduce((sum, r) => sum + r.revenue, 0);
+                const isOther = (m) => (m.brandMapping || '').toUpperCase().includes('SERVICE') || (m.productGroup || '').toUpperCase().includes('INSURANCE');
+
+                (dataArr || []).forEach(m => {
+                    const pCode = String(m.productCode);
+                    const brand = (m.brand || '').toUpperCase();
+                    const isAppleBeats = ['APPLE', 'BEATS'].includes(brand);
+                    const revenue = m.revenue || 0;
+                    
+                    // Unit Counting Rule: Don't count units if revenue is 0 for hardware (Promo)
+                    const isHardware = mainHardware.includes(pCode);
+                    const units = (isHardware && revenue <= 0) ? 0 : (m.units || 0);
+
+                    // Total (Exclude Other)
+                    if (!isOther(m)) {
+                        results.total.units += units;
+                        results.total.revenue += revenue;
+                    }
+
+                    // Hardware
+                    if (pCode === '53') { results.mac.units += units; results.mac.revenue += revenue; }
+                    else if (pCode === '54') { results.ipad.units += units; results.ipad.revenue += revenue; }
+                    else if (pCode === '48') { results.iphone.units += units; results.iphone.revenue += revenue; }
+                    else if (pCode === '72') { results.watch.units += units; results.watch.revenue += revenue; }
+                    else if (pCode === '84') { results.sim.units += units; results.sim.revenue += revenue; }
+                    
+                    // 3RD vs BTB (Exclude Main Hardware and Other)
+                    if (!mainHardware.includes(pCode) && !isOther(m)) {
+                        if (isAppleBeats) {
+                            results.btb.units += units;
+                            results.btb.revenue += revenue;
+                        } else {
+                            results['3rd'].units += units;
+                            results['3rd'].revenue += revenue;
+                        }
+                    }
+                });
+                return results;
+            };
+
+            const mtdData = getCategoryData(filteredMtdRaw);
+            const momRaw = masterSession.lastmonth ? masterSession.lastmonth.filter(m => isMatch(m.name)) : [];
+            const yoyRaw = masterSession.lastyear ? masterSession.lastyear.filter(m => isMatch(m.name)) : [];
+            const momData = getCategoryData(momRaw);
+            const yoyData = getCategoryData(yoyRaw);
+
+            // Forecast Days Calculation
+            const now = new Date();
+            const currentDay = now.getDate();
+            const totalDaysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
 
             // 3. Target Data Filtering & Aggregation
             const filteredTarget = target.filter(t => isMatch(t.name));
-
             const sumField = (arr, field) => arr.reduce((sum, b) => sum + (b[field] || 0), 0);
             
-            const tarTotal = sumField(filteredTarget, 'target');
-            const tarMac = sumField(filteredTarget, 'macTarget');
-            const tarIpad = sumField(filteredTarget, 'ipadTarget');
-            const tarIphone = sumField(filteredTarget, 'iphoneTarget');
-            const tarWatch = sumField(filteredTarget, 'watchTarget');
-            const tar3rd = sumField(filteredTarget, 'thirdPartyTarget');
-            const tarBtb = sumField(filteredTarget, 'btbTarget');
-            const tarSim = sumField(filteredTarget, 'simTarget');
+            const categoryTargets = {
+                total: sumField(filteredTarget, 'target'),
+                mac: sumField(filteredTarget, 'macTarget'),
+                ipad: sumField(filteredTarget, 'ipadTarget'),
+                iphone: sumField(filteredTarget, 'iphoneTarget'),
+                watch: sumField(filteredTarget, 'watchTarget'),
+                '3rd': sumField(filteredTarget, 'thirdPartyTarget'),
+                btb: sumField(filteredTarget, 'btbTarget'),
+                sim: sumField(filteredTarget, 'simTarget')
+            };
 
-            // 4. UI Update Helper
+            // 4. UI Update Helper (Enhanced for Round 2)
+            const updateCard = (idPrefix) => {
+                const actual = mtdData[idPrefix];
+                const tarVal = categoryTargets[idPrefix];
+                const mom = momData[idPrefix];
+                const yoy = yoyData[idPrefix];
+                const isUnitsMode = idPrefix === 'sim';
 
-            const updateCard = (idPrefix, actual, targetVal, isUnit = false) => {
-                const actualEl = document.getElementById(`actual-${idPrefix}-revenue`);
+                // Core Elements
+                const revEl = document.getElementById(`actual-${idPrefix}-revenue`);
+                const unitEl = document.getElementById(`actual-${idPrefix}-units`);
                 const targetEl = document.getElementById(`total-${idPrefix}-target`);
                 const pctEl = document.getElementById(`ach-${idPrefix}-pct`);
                 const barEl = document.getElementById(`bar-${idPrefix}-ach`);
+
+                // Main Metric vs Units
+                if (isUnitsMode) {
+                    if (revEl) revEl.innerText = formatUnit(actual.units); // SIM uses units in primary slot
+                } else {
+                    if (revEl) revEl.innerText = formatVal(actual.revenue);
+                    if (unitEl) unitEl.innerText = `${formatUnit(actual.units)} Units`;
+                    
+                    // Weekly Average Calculation (Hardware categories)
+                    if (['mac', 'ipad', 'iphone', 'watch'].includes(idPrefix)) {
+                        const weeklyAvgEl = document.getElementById(`weekly-avg-${idPrefix}`);
+                        if (weeklyAvgEl) {
+                            const avgPerDay = currentDay > 0 ? (actual.units / currentDay) : 0;
+                            const weeklyAvg = avgPerDay * 7;
+                            weeklyAvgEl.innerText = `Avg: ${weeklyAvg.toFixed(1)}/Wk`;
+                        }
+                    }
+                }
                 
-                const fmt = isUnit ? formatUnit : formatVal;
+                if (targetEl) targetEl.innerText = isUnitsMode ? formatUnit(tarVal) : formatVal(tarVal);
                 
-                if (actualEl) actualEl.innerText = fmt(actual);
-                if (targetEl) targetEl.innerText = fmt(targetVal);
-                
-                const pct = targetVal > 0 ? Math.round((actual / targetVal) * 100) : 0;
+                const achPct = tarVal > 0 ? (isUnitsMode ? actual.units / tarVal : actual.revenue / tarVal) * 100 : 0;
                 if (pctEl) {
-                    pctEl.innerText = `${pct}%`;
-                    pctEl.className = `text-[9px] font-black px-1.5 py-0.5 rounded ${pct >= 100 ? 'bg-emerald-500/20 text-emerald-400' : 'bg-indigo-500/20 text-indigo-300'}`;
+                    pctEl.innerText = `${Math.round(achPct)}%`;
+                    // Enhanced high-vibrancy Infographic Circle
+                    const baseColor = idPrefix === 'total' ? 'amber' : idPrefix === 'mac' ? 'indigo' : idPrefix === 'ipad' ? 'emerald' : idPrefix === 'iphone' ? 'rose' : idPrefix === 'watch' ? 'cyan' : idPrefix === '3rd' ? 'purple' : idPrefix === 'btb' ? 'blue' : 'rose';
+                    
+                    pctEl.className = `min-w-[42px] h-[42px] flex items-center justify-center text-[11px] font-[900] rounded-full border-2 transition-all group-hover:scale-110 shadow-lg ${
+                        achPct >= 105 ? `bg-indigo-500 text-white border-indigo-300 shadow-indigo-500/40` :
+                        achPct >= 100 ? `bg-emerald-500 text-white border-emerald-300 shadow-emerald-500/40` :
+                        `bg-${baseColor}-500/20 text-${baseColor}-400 border-${baseColor}-500/40`
+                    }`;
                 }
                 if (barEl) {
-                    barEl.style.width = `${Math.min(pct, 100)}%`;
-                    if (pct >= 100) barEl.classList.add('bg-emerald-500');
+                    barEl.style.width = `${Math.min(achPct, 100)}%`;
+                    if (achPct >= 105) {
+                        barEl.className = 'h-full bg-indigo-500 rounded-full shadow-[0_0_10px_rgba(99,102,241,0.4)] transition-all duration-1000';
+                    } else if (achPct >= 100) {
+                        barEl.className = 'h-full bg-emerald-500 rounded-full shadow-[0_0_10px_rgba(16,185,129,0.4)] transition-all duration-1000';
+                    } else {
+                        // Keep original category color (amber, indigo, etc.)
+                        const baseCardColor = barEl.id.split('-')[1]; // e.g., 'total', 'mac'
+                        const colors = { total: 'amber', mac: 'indigo', ipad: 'emerald', iphone: 'rose', watch: 'cyan', '3rd': 'purple', btb: 'blue', sim: 'rose' };
+                        barEl.className = `h-full bg-${colors[baseCardColor] || 'slate'}-500 rounded-full transition-all duration-1000`;
+                    }
                 }
+
+                // Forecast Calculations & Visual Feedback
+                const curVal = isUnitsMode ? actual.units : actual.revenue;
+                const forecastVal = currentDay > 0 ? (curVal / currentDay * totalDaysInMonth) : 0;
+                const forecastAchPct = tarVal > 0 ? (forecastVal / tarVal * 100) : 0;
+
+                const fcBahtEl = document.getElementById(`fc-${idPrefix}-baht`);
+                const fcPctEl = document.getElementById(`fc-${idPrefix}-pct`);
+                const cardContainer = document.getElementById(`card-${idPrefix}`)?.parentElement;
+
+                if (fcBahtEl) fcBahtEl.innerText = isUnitsMode ? formatUnit(Math.round(forecastVal)) : formatVal(forecastVal);
+                if (fcPctEl) {
+                    fcPctEl.innerText = `${Math.round(forecastAchPct)}%`;
+                    fcPctEl.className = `text-[10px] font-black ${forecastAchPct >= 105 ? 'text-indigo-400' : forecastAchPct < 100 ? 'text-rose-400' : 'text-indigo-300'}`;
+                }
+
+                if (cardContainer) {
+                    cardContainer.classList.remove('forecast-perfect', 'forecast-danger');
+                    if (forecastAchPct >= 105) cardContainer.classList.add('forecast-perfect');
+                    else if (forecastAchPct < 100) cardContainer.classList.add('forecast-danger');
+                }
+
+                // Growth Metrics (MoM/YoY)
+                const updateGrowth = (id, cur, prev) => {
+                    const el = document.getElementById(id);
+                    if (!el) return;
+
+                    const curVal = isUnitsMode ? cur.units : cur.revenue;
+                    const prevVal = isUnitsMode ? prev.units : prev.revenue;
+                    const diff = curVal - prevVal;
+                    const pct = prevVal > 0 ? (diff / prevVal) * 100 : 0;
+
+                    const isUp = diff >= 0;
+                    const colorClass = isUp ? 'text-emerald-400' : 'text-rose-400';
+                    const sign = isUp ? '+' : '';
+                    
+                    el.innerHTML = `
+                        <div class="flex flex-col items-end gap-1">
+                            <div class="flex items-center gap-1">
+                                <span class="text-[7px] font-black text-slate-500 uppercase">${id.includes('mom') ? 'MOM' : 'YOY'}</span>
+                                <span class="text-[9px] font-black ${colorClass}">${sign}${pct.toFixed(1)}%</span>
+                                <i data-lucide="${isUp ? 'trending-up' : 'trending-down'}" class="w-2.5 h-2.5 ${colorClass}"></i>
+                            </div>
+                            <div class="flex items-center gap-1 opacity-80">
+                                <span class="text-[7px] font-bold text-slate-600 uppercase">DIFF</span>
+                                <span class="text-[8px] font-black ${colorClass}">${isUnitsMode ? diff : formatVal(diff)}</span>
+                            </div>
+                        </div>
+                    `;
+                };
+
+                updateGrowth(`mom-${idPrefix}-stat`, actual, mom);
+                updateGrowth(`yoy-${idPrefix}-stat`, actual, yoy);
             };
 
             // Update All Cards
-            updateCard('total', actualTotal, tarTotal);
-            updateCard('mac', actualMac, tarMac);
-            updateCard('ipad', actualIpad, tarIpad);
-            updateCard('iphone', actualIphone, tarIphone);
-            updateCard('watch', actualWatch, tarWatch);
-            updateCard('3rd', actual3rd, tar3rd);
-            updateCard('btb', actualBtb, tarBtb);
-            updateCard('sim', actualSim, tarSim, true);
+            ['total', 'mac', 'ipad', 'iphone', 'watch', '3rd', 'btb', 'sim'].forEach(id => updateCard(id));
 
-            // 5. Total Calculations & Header Metrics
+            // Legacy Fallback for global header metrics
             setVal('branch-count', filterBranch === 'all' ? target.length : 1);
-            setVal('actual-total-revenue', formatVal(actualTotal));
-            setVal('total-target-all', formatVal(tarTotal));
+            setVal('total-target-all', formatVal(categoryTargets.total));
             
-            const totalAchRate = tarTotal > 0 ? (actualTotal / tarTotal) * 100 : 0;
-            setVal('ach-total-pct', `${Math.round(totalAchRate)}%`);
-            
-            const progressEl = document.getElementById('bar-total-ach');
-            if (progressEl) progressEl.style.width = `${Math.min(totalAchRate, 100)}%`;
-
             // 6. Branch Comparison Table Logic
             renderBranchComparisonTable();
 
-            // 6. Focus & Attach Calculations
-            let focusCover = { units: 0, rev: 0 };
-            let focusAC = { units: 0, rev: 0 };
-            let focusPencil = { units: 0, rev: 0 };
-            
-            let hardwareUnits = 0; // Mac, iPad, iPhone, Watch
-            let ipadUnits = 0;
+            // 6. Focus & Attach Calculations (Expanded to 8 Items)
+            const getFocusData = (data) => {
+                const focus = {
+                    iphoneUnits: 0,
+                    ipadUnits: 0,
+                    total3rdUnits: 0,
+                    total3rdRev: 0,
+                    cover: { units: 0, rev: 0 },
+                    ac: { units: 0, rev: 0 },
+                    pencil: { units: 0, rev: 0 },
+                    sim: { units: 0, rev: 0 },
+                    pvl: { units: 0, rev: 0 },
+                    caseIphone: { units: 0, rev: 0 },
+                    ufund: { units: 0, rev: 0 },
+                    insurance: { units: 0, rev: 0 }
+                };
 
-            filteredMtdRaw.forEach(r => {
-                const pCode = String(r.productCode);
-                const isMajor = ['53', '54', '48', '72'].includes(pCode);
-                const isIpad = pCode === '54';
-                
-                if (isMajor) hardwareUnits += (r.units || 0);
-                if (isIpad) ipadUnits += (r.units || 0);
+                const mainHardware = ['53', '54', '48', '72'];
+                const PVL_BRANDS = ['TITANV', 'BLUE BOX', 'MCDODO', 'Q PLUS', 'BASEUS', 'TECHPRO', 'KING KONG'];
 
-                // Logic: Cover+ (I=41, A contains "Coverplus")
-                if (r.colI === '41' && String(r.skuCode).toUpperCase().includes('COVERPLUS')) {
-                    focusCover.units += (r.units || 0);
-                    focusCover.rev += (r.revenue || 0);
-                }
-                // Logic: AC+ (I=49, J contains "Apple Care")
-                if (r.colI === '49' && String(r.colJ).toUpperCase().includes('APPLE CARE')) {
-                    focusAC.units += (r.units || 0);
-                    focusAC.rev += (r.revenue || 0);
-                }
-                // Logic: Pencil (I=51, M contains "Pencil")
-                if (r.colI === '51' && String(r.colM).toUpperCase().includes('PENCIL')) {
-                    focusPencil.units += (r.units || 0);
-                    focusPencil.rev += (r.revenue || 0);
-                }
-            });
+                (data || []).forEach(r => {
+                    const pCode = String(r.productCode || '');
+                    const group = String(r.productGroup || '').toUpperCase();
+                    const brand = String(r.brand || '').toUpperCase();
+                    const revenue = r.revenue || 0;
+                    
+                    // Unit Counting Rule
+                    const isHardware = mainHardware.includes(pCode);
+                    const units = (isHardware && revenue <= 0) ? 0 : (r.units || 0);
 
-            // Update Focus UI
-            setVal('focus-cover-units', focusCover.units.toLocaleString());
-            setVal('focus-cover-rev', formatVal(focusCover.rev));
-            document.getElementById('bar-cover-attach').style.width = focusCover.units > 0 ? '100%' : '0%';
+                    // Denominators
+                    if (pCode === '48') focus.iphoneUnits += units;
+                    if (pCode === '54') focus.ipadUnits += units;
+                    if (!mainHardware.includes(pCode)) {
+                        focus.total3rdUnits += units;
+                        focus.total3rdRev += revenue;
+                    }
 
-            setVal('focus-ac-units', focusAC.units.toLocaleString());
-            setVal('focus-ac-rev', formatVal(focusAC.rev));
-            const acRate = hardwareUnits > 0 ? (focusAC.units / hardwareUnits * 100) : 0;
-            setVal('focus-ac-rate', `${acRate.toFixed(1)}% ATTACH`);
-            document.getElementById('bar-ac-attach').style.width = `${Math.min(acRate * 4, 100)}%`; // Scaled for UI visibility
+                    const colI = String(r.colI || '');
+                    const colM = String(r.colM || '').toUpperCase();
+                    const mapping = String(r.brandMapping || '').toUpperCase();
 
-            setVal('focus-pencil-units', focusPencil.units.toLocaleString());
-            setVal('focus-pencil-rev', formatVal(focusPencil.rev));
-            const pencilRate = ipadUnits > 0 ? (focusPencil.units / ipadUnits * 100) : 0;
-            setVal('focus-pencil-rate', `${pencilRate.toFixed(1)}% ATTACH`);
-            document.getElementById('bar-pencil-attach').style.width = `${Math.min(pencilRate, 100)}%`;
+                    // 1. Cover+ (Code 41 + SKU contains Coverplus)
+                    if (colI === '41' && String(r.skuCode).toUpperCase().includes('COVERPLUS')) {
+                        focus.cover.units += units;
+                        focus.cover.rev += revenue;
+                    }
+                    // 2. AC+ (Code 49 + apple)
+                    if (colI === '49' && brand === 'APPLE') {
+                        focus.ac.units += units;
+                        focus.ac.rev += revenue;
+                    }
+                    // 3. Pencil (Code 51 + Model contains Pencil)
+                    if (colI === '51' && colM.includes('PENCIL')) {
+                        focus.pencil.units += units;
+                        focus.pencil.rev += revenue;
+                    }
+                    // 4. SIM (Code 84)
+                    if (pCode === '84') {
+                        focus.sim.units += units;
+                        focus.sim.rev += revenue;
+                    }
+                    // 5. PVL
+                    if (PVL_BRANDS.includes(brand)) {
+                        focus.pvl.units += units;
+                        focus.pvl.rev += revenue;
+                    }
+                    // 6. Case iPhone
+                    if (group.includes('CASE IPHONE')) {
+                        focus.caseIphone.units += units;
+                        focus.caseIphone.rev += revenue;
+                    }
+                    // 7. UFUND
+                    if (mapping.includes('UFUND') || String(r.colAM || '').toUpperCase().includes('UFUND PERSONAL')) {
+                        focus.ufund.units += units;
+                        focus.ufund.rev += revenue;
+                    }
+                    // 8. Insurance
+                    if (mapping.includes('SERVICE') || group.includes('INSURANCE')) {
+                        focus.insurance.units += units;
+                        focus.insurance.rev += revenue;
+                    }
+                });
+                return focus;
+            };
+            window.getFocusData = getFocusData;
+
+            const mtdFocus = getFocusData(filteredMtdRaw);
+            const momFocus = getFocusData(masterSession.lastmonth ? masterSession.lastmonth.filter(m => isMatch(m.name)) : []);
+            const yoyFocus = getFocusData(masterSession.lastyear ? masterSession.lastyear.filter(m => isMatch(m.name)) : []);
+
+            const focusItems = [
+                { id: 'cover', label: 'Cover+', data: mtdFocus.cover, mom: momFocus.cover, yoy: yoyFocus.cover, base: mtdFocus.iphoneUnits, color: 'amber', icon: 'shield-check' },
+                { id: 'ac', label: 'AC+', data: mtdFocus.ac, mom: momFocus.ac, yoy: yoyFocus.ac, base: (mtdFocus.iphoneUnits + mtdFocus.ipadUnits), color: 'indigo', icon: 'heart-pulse' },
+                { id: 'pencil', label: 'Pencil', data: mtdFocus.pencil, mom: momFocus.pencil, yoy: yoyFocus.pencil, base: mtdFocus.ipadUnits, color: 'emerald', icon: 'pencil' },
+                { id: 'sim', label: 'SIM', data: mtdFocus.sim, mom: momFocus.sim, yoy: yoyFocus.sim, base: mtdFocus.iphoneUnits, color: 'rose', icon: 'radio' },
+                { id: 'pvl', label: 'PVL', data: mtdFocus.pvl, mom: momFocus.pvl, yoy: yoyFocus.pvl, base: mtdFocus.total3rdRev, color: 'sky', icon: 'award', isBaht: true },
+                { id: 'case', label: 'Case iPhone', data: mtdFocus.caseIphone, mom: momFocus.caseIphone, yoy: yoyFocus.caseIphone, base: mtdFocus.iphoneUnits, color: 'indigo', icon: 'smartphone' },
+                { id: 'ufund', label: 'UFUND', data: mtdFocus.ufund, mom: momFocus.ufund, yoy: yoyFocus.ufund, base: mtdFocus.iphoneUnits, color: 'orange', icon: 'zap' },
+                { id: 'other', label: 'Insurance / Other', data: mtdFocus.insurance, mom: momFocus.insurance, yoy: yoyFocus.insurance, base: 0, color: 'slate', icon: 'shield' }
+            ];
+
+            const focusGrid = document.getElementById('focus-grid');
+            if (focusGrid) {
+                focusGrid.innerHTML = focusItems.map(item => {
+                    const attachRate = item.base > 0 ? ((item.isBaht ? item.data.rev : item.data.units) / item.base * 100) : 0;
+                    const momDiff = item.data.rev - item.mom.rev;
+                    const forecast = currentDay > 0 ? (item.data.rev / currentDay * totalDaysInMonth) : 0;
+                    
+                    const formatDiff = (diff) => {
+                        const isUp = diff >= 0;
+                        const color = isUp ? 'text-emerald-400' : 'text-rose-400';
+                        const sign = isUp ? '+' : '';
+                        return `<span class="${color} font-black">${sign}${formatVal(diff)}</span>`;
+                    };
+
+                    return `
+                        <div onclick="openFocusDrilldown('${item.id}')" class="bg-white/5 border border-white/10 rounded-2xl p-3 flex flex-col gap-2 transition-all hover:bg-white/10 hover:border-${item.color}-500/50 cursor-pointer group/card shadow-lg active:scale-95">
+                            <div class="flex justify-between items-start">
+                                <div>
+                                    <p class="text-[8px] text-slate-500 font-black uppercase tracking-widest opacity-70">${item.label}</p>
+                                    <div class="flex items-baseline gap-1">
+                                        <span class="text-lg font-black text-white">${item.isBaht ? formatVal(item.data.rev) : item.data.units.toLocaleString()}</span>
+                                        <span class="text-[8px] text-slate-500 font-bold uppercase">${item.isBaht ? '' : 'Units'}</span>
+                                    </div>
+                                </div>
+                                <div class="text-right">
+                                    <p class="text-[10px] font-black text-${item.color}-400 mb-1">${formatVal(item.data.rev)}</p>
+                                    ${item.base > 0 ? `
+                                        <div class="inline-flex items-center px-2 py-0.5 rounded-full bg-${item.color}-500/10 border border-${item.color}-500/20">
+                                            <span class="text-[9px] font-black text-${item.color}-400">${attachRate.toFixed(1)}%</span>
+                                        </div>
+                                    ` : ''}
+                                </div>
+                            </div>
+                            
+                            <div class="w-full bg-slate-800/50 h-1 rounded-full overflow-hidden">
+                                <div class="bg-${item.color}-500 h-full rounded-full transition-all duration-1000 shadow-[0_0_8px_rgba(var(--${item.color}-rgb),0.5)]" style="width: ${Math.min(attachRate * 4, 100)}%"></div>
+                            </div>
+
+                            <div class="flex justify-between items-center bg-white/5 rounded-lg p-1.5 px-2">
+                                <div class="flex flex-col">
+                                    <span class="text-[7px] text-slate-500 font-black uppercase leading-none mb-0.5">MoM Diff</span>
+                                    <div class="text-[9px] leading-none">${formatDiff(momDiff)}</div>
+                                </div>
+                                <div class="flex flex-col items-end">
+                                    <span class="text-[7px] text-slate-500 font-black uppercase leading-none mb-0.5">Forecast</span>
+                                    <span class="text-[9px] text-indigo-300 font-bold leading-none">${formatVal(forecast)}</span>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+                lucide.createIcons();
+            }
 
             // 7. Title Update
             const titleEl = document.querySelector('h2.text-4xl');
@@ -1764,7 +2293,8 @@
             document.getElementById('branch-modal-id').innerText = `ID: ${targetBranch.id} • Executive Deep Dive`;
 
             const branchMtd = mtd.filter(m => cleanId(m.branchId) === cleanId(branchId));
-            const pvlBrands = ['TITANV', 'BLUE BOX', 'MCDODO', 'Q PLUS', 'BASEUS', 'TECHPRO', 'KING KONG'];
+            const mainHardware = ['72', '48', '53', '54'];
+            const PVL_BRANDS = ['TITANV', 'BLUE BOX', 'MCDODO', 'Q PLUS', 'BASEUS', 'TECHPRO', 'KING KONG'];
             
             const categories = [
                 { name: 'Mac', code: '53', tar: targetBranch.macTarget },
@@ -1773,42 +2303,44 @@
                 { name: 'Watch', code: '72', tar: targetBranch.watchTarget },
             ];
 
-            const mainHardware = ['72', '48', '53', '54'];
-            const actualBtbRows = branchMtd.filter(m => 
-                (m.brand || '').toUpperCase() === 'APPLE' && 
-                !mainHardware.includes(m.productCode) && 
-                !(m.productGroup || '').toUpperCase().includes('INSURANCE')
-            );
+            const getBranchUnits = (rows, code) => rows.filter(m => m.productCode === code).reduce((s, r) => s + (r.revenue > 0 ? (r.units || 0) : 0), 0);
+            const actualBtbRows = branchMtd.filter(m => {
+                const brand = (m.brand || '').toUpperCase();
+                const isAppleBeats = ['APPLE', 'BEATS'].includes(brand);
+                const isService = (m.brandMapping || '').toUpperCase().includes('SERVICE') || (m.productGroup || '').toUpperCase().includes('INSURANCE');
+                return isAppleBeats && !mainHardware.includes(m.productCode) && !isService;
+            });
             const actualBtb = actualBtbRows.reduce((s, r) => s + r.revenue, 0);
             const unitsBtb = actualBtbRows.reduce((s, r) => s + (r.units || 0), 0);
             
-            const exclude3rd = ['38', '41', '84', '64', '51', '49', '79'];
-            const actual3rdRows = branchMtd.filter(m => 
-                (m.brand || '').toUpperCase() !== 'APPLE' && 
-                !exclude3rd.includes(m.productCode) &&
-                !(m.productGroup || '').toUpperCase().includes('INSURANCE')
-            );
+            const actual3rdRows = branchMtd.filter(m => {
+                const brand = (m.brand || '').toUpperCase();
+                const isAppleBeats = ['APPLE', 'BEATS'].includes(brand);
+                const isHardware = mainHardware.includes(m.productCode);
+                const isService = (m.brandMapping || '').toUpperCase().includes('SERVICE') || (m.productGroup || '').toUpperCase().includes('INSURANCE');
+                return !isAppleBeats && !isHardware && !isService;
+            });
             const actual3rd = actual3rdRows.reduce((s, r) => s + r.revenue, 0);
             const units3rd = actual3rdRows.reduce((s, r) => s + (r.units || 0), 0);
             
             categories.push({ name: 'BTB', tar: targetBranch.btbTarget, actual: actualBtb, units: unitsBtb });
             categories.push({ name: '3RD Party', tar: targetBranch.thirdPartyTarget, actual: actual3rd, units: units3rd });
 
-            // Hardware Bases for Attach Rates
-            const iphoneUnits = branchMtd.filter(m => m.productCode === '48').reduce((s, r) => s + (r.units || 0), 0);
-            const ipadUnits = branchMtd.filter(m => m.productCode === '54').reduce((s, r) => s + (r.units || 0), 0);
+            // Hardware Bases for Attach Rates (Applying Unit Counting Rule)
+            const iphoneUnits = getBranchUnits(branchMtd, '48');
+            const ipadUnits = getBranchUnits(branchMtd, '54');
             const hardwareUnits = iphoneUnits + ipadUnits;
 
-            // Focus Items Logic with Executive Targets
+            // Focus Items Logic Synchronized with getFocusData and README.md
             const focusItems = [
-                { name: 'Cover+', filter: (r) => r.productCode === '41' && !(r.skuCode || '').toUpperCase().includes('7CAREFREE'), base: iphoneUnits, analysis: 'unit', target: 25, red: 15 },
-                { name: 'Pencil', filter: (r) => (r.productDetail || '').toUpperCase().includes('PENCIL'), base: ipadUnits, analysis: 'unit', target: 85, red: 65 },
-                { name: 'Case iPhone', filter: (r) => r.productCode === '79' && (r.productGroup || '').toUpperCase().includes('CASE IPHONE'), base: iphoneUnits, analysis: 'unit', target: 60, red: 50 },
-                { name: 'PVL', filter: (r) => pvlBrands.includes((r.brand || '').toUpperCase()), base: units3rd, analysis: 'revenue', target: 10, red: 8 },
-                { name: 'Apple Care+', filter: (r) => r.productCode === '49' && !(r.skuCode || '').toUpperCase().includes('7CAREFREE'), base: hardwareUnits, analysis: 'unit', target: 20, red: 15 },
-                { name: 'UFUND', filter: (r) => (r.colAM || '').toUpperCase().includes('UFUND PERSONAL'), base: iphoneUnits, analysis: 'unit', target: 8, red: 5 },
-                { name: 'SIM (Unit)', filter: (r) => r.productCode === '84' || r.productCode === '103', isUnit: true, base: iphoneUnits, tar: targetBranch.simTarget, analysis: 'unit', target: 85, red: 85 },
-                { name: 'Insurance / Others', filter: (r) => (r.productGroup || '').toUpperCase().includes('INSURANCE'), isOther: true, analysis: 'revenue' }
+                { name: 'Cover+', filter: (r) => String(r.colI || '') === '41' && String(r.skuCode || '').toUpperCase().includes('COVERPLUS'), base: iphoneUnits, analysis: 'unit', target: 25 },
+                { name: 'Pencil', filter: (r) => String(r.colI || '') === '51' && String(r.colM || '').toUpperCase().includes('PENCIL'), base: ipadUnits, analysis: 'unit', target: 85 },
+                { name: 'Case iPhone', filter: (r) => (r.productGroup || '').toUpperCase().includes('CASE IPHONE'), base: iphoneUnits, analysis: 'unit', target: 60 },
+                { name: 'PVL', filter: (r) => PVL_BRANDS.includes((r.brand || '').toUpperCase()), base: units3rd, analysis: 'revenue', target: 10 },
+                { name: 'Apple Care+', filter: (r) => String(r.colI || '') === '49' && (r.brand || '').toUpperCase() === 'APPLE', base: hardwareUnits, analysis: 'unit', target: 20 },
+                { name: 'UFUND', filter: (r) => (r.brandMapping || '').toUpperCase().includes('UFUND') || String(r.colAM || '').toUpperCase().includes('UFUND PERSONAL'), base: iphoneUnits, analysis: 'unit', target: 8 },
+                { name: 'SIM (Unit)', filter: (r) => r.productCode === '84', isUnit: true, base: iphoneUnits, tar: targetBranch.simTarget, analysis: 'unit', target: 85 },
+                { name: 'Insurance / Others', filter: (r) => (r.productGroup || '').toUpperCase().includes('INSURANCE') || (r.brandMapping || '').toUpperCase().includes('SERVICE'), isOther: true, analysis: 'revenue' }
             ];
 
             const now = new Date();
@@ -1817,9 +2349,10 @@
 
             const tbody = document.getElementById('branch-modal-body');
             tbody.innerHTML = categories.map(cat => {
-                const actual = cat.actual !== undefined ? cat.actual : branchMtd.filter(m => m.productCode === cat.code).reduce((s, r) => s + r.revenue, 0);
+                const rows = branchMtd.filter(m => m.productCode === cat.code);
+                const actual = cat.actual !== undefined ? cat.actual : rows.reduce((s, r) => s + r.revenue, 0);
                 const tar = cat.tar || 0;
-                const units = cat.units !== undefined ? cat.units : branchMtd.filter(m => m.productCode === cat.code || (cat.name === 'BTB' && (m.brand || '').toUpperCase() === 'APPLE' && !mainHardware.includes(m.productCode))).reduce((s, r) => s + (r.units || 0), 0);
+                const units = cat.units !== undefined ? cat.units : rows.reduce((s, r) => s + (r.revenue > 0 ? (r.units || 0) : 0), 0);
                 
                 const achPct = tar > 0 ? (actual / tar * 100) : 0;
                 const forecastBaht = currentDay > 0 ? (actual / currentDay * totalDaysInMonth) : 0;
@@ -1835,15 +2368,21 @@
                             ${cat.name}
                             <i data-lucide="chevron-right" class="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity"></i>
                         </td>
-                        <td class="p-4 text-right text-sm text-slate-400">${formatVal(tar)}</td>
-                        <td class="p-4 text-right text-sm font-bold text-white">${formatVal(actual)}</td>
+                        <td class="p-4 text-right text-sm text-slate-500 font-bold uppercase tracking-tight">${formatVal(tar)}</td>
+                        <td class="p-4 text-right text-sm font-black text-white px-6">${formatVal(actual)}</td>
                         <td class="p-4 text-center">
-                            <span class="text-xs font-black ${achColor} bg-white/5 px-2 py-1 rounded">${achPct.toFixed(1)}%</span>
+                            <div class="flex items-center justify-center">
+                                <span class="min-w-[40px] h-[40px] flex items-center justify-center text-[11px] font-black rounded-full ${
+                                    achPct >= 105 ? 'bg-indigo-500/10 border-2 border-indigo-500/30 text-indigo-400' :
+                                    achPct >= 100 ? 'bg-emerald-500/10 border-2 border-emerald-500/30 text-emerald-400' :
+                                    'bg-white/5 border border-white/10 text-slate-400'
+                                }">${Math.round(achPct)}%</span>
+                            </div>
                         </td>
                         <td class="p-4 text-right text-sm text-indigo-300 font-bold">${formatUnit(units)}</td>
-                        <td class="p-4 text-right text-sm font-bold text-slate-300">${formatVal(forecastBaht)}</td>
+                        <td class="p-4 text-right text-sm font-black text-slate-300">${formatVal(forecastBaht)}</td>
                         <td class="p-4 text-center">
-                            <span class="text-xs font-black text-slate-400">${forecastPct.toFixed(1)}%</span>
+                            <span class="text-[10px] font-black text-slate-500">${Math.round(forecastPct)}% <span class="text-[7px] uppercase tracking-tighter opacity-70">FCST</span></span>
                         </td>
                     </tr>
                 `;
@@ -1852,8 +2391,8 @@
             const fbody = document.getElementById('branch-focus-body');
             fbody.innerHTML = focusItems.map(item => {
                 const rows = branchMtd.filter(item.filter);
-                const actual = rows.reduce((s,r) => s + (item.isUnit ? r.units : r.revenue), 0);
-                const units = rows.reduce((s,r) => s + (r.units || 0), 0);
+                const actual = rows.reduce((s,r) => s + (item.isUnit ? (r.revenue > 0 ? r.units : 0) : r.revenue), 0);
+                const units = rows.reduce((s,r) => s + (r.revenue > 0 ? (r.units || 0) : 0), 0);
                 
                 const tar = item.tar || 0;
                 const forecastBaht = currentDay > 0 ? (actual / currentDay * totalDaysInMonth) : 0;
@@ -1904,47 +2443,54 @@
                     attHtml = `<span class="text-xs ${simColor} bg-white/5 px-2 py-1 rounded">${ach.toFixed(0)}%</span>`;
                 }
 
-                const momColor = momPct > 0 ? 'text-emerald-400' : (momPct < 0 ? 'text-rose-400' : 'text-slate-500');
-                const yoyColor = yoyPct > 0 ? 'text-emerald-400' : (yoyPct < 0 ? 'text-rose-400' : 'text-slate-500');
+                const momColor = momPct >= 0 ? 'text-emerald-400' : 'text-rose-400';
+                const yoyColor = yoyPct >= 0 ? 'text-emerald-400' : 'text-rose-400';
 
                 return `
                     <tr class="border-b border-white/5 hover:bg-white/5 transition-colors cursor-pointer group" onclick="openBranchSkuDrilldown('${branchId}', '${item.name}', '${item.name}')">
                         <td class="p-4">
-                            <div class="flex items-center gap-2">
-                                <p class="text-sm font-bold text-white group-hover:text-rose-400">${item.name}</p>
-                                <i data-lucide="chevron-right" class="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity"></i>
-                            </div>
-                            <p class="text-[9px] text-slate-500 font-black uppercase tracking-widest">${item.isOther ? 'Misc' : 'Focus'}</p>
-                        </td>
-                        <td class="p-4 text-right">
-                            <p class="text-sm font-bold text-white">${item.isUnit ? '-' : formatVal(actual)}</p>
-                            <p class="text-[10px] text-indigo-300 font-bold">${formatUnit(units)} UNITS</p>
-                        </td>
-                        <td class="p-4 text-center">
-                            ${attHtml}
-                        </td>
-                        <td class="p-4 text-right">
-                            <p class="text-sm font-bold text-slate-300">
-                                ${isUnitAnalysis ? formatUnit(forecastOutput) : formatVal(forecastOutput)}
-                            </p>
-                            <p class="text-[10px] text-slate-500 font-bold">${forecastPct > 0 ? forecastPct.toFixed(1) + '%' : '-'}</p>
-                        </td>
-                        <td class="p-4 text-center">
-                            <div class="flex flex-col items-center">
-                                <div class="flex items-center gap-1">
-                                    <span class="text-[10px] font-black ${momColor}">${momPct > 0 ? '↑' : (momPct < 0 ? '↓' : '')} ${Math.abs(momPct).toFixed(1)}%</span>
-                                    <span class="text-[9px] text-slate-500">(${formatUnit(lastMonthUnits)})</span>
-                                </div>
-                                <div class="flex items-center gap-1">
-                                    <span class="text-[10px] font-black ${yoyColor}">${yoyPct > 0 ? '↑' : (yoyPct < 0 ? '↓' : '')} ${Math.abs(yoyPct).toFixed(1)}%</span>
-                                    <span class="text-[9px] text-slate-500">(${formatUnit(lastYearUnits)})</span>
-                                </div>
+                            <div class="flex flex-col">
+                                <p class="text-sm font-bold text-white group-hover:text-indigo-400 transition-colors uppercase">${item.name}</p>
+                                <p class="text-[8px] text-slate-500 font-black uppercase tracking-widest opacity-70">${item.isOther ? 'Misc' : 'Focus Channel'}</p>
                             </div>
                         </td>
                         <td class="p-4 text-right">
-                            <span class="text-xs font-bold ${distToGoal >= 0 ? 'text-emerald-400' : 'text-rose-400'}">
-                                ${distToGoal >= 0 ? '+' : ''}${isUnitAnalysis ? formatUnit(distToGoal) : formatVal(distToGoal)}
-                            </span>
+                            <p class="text-xs font-black text-white">${item.isUnit ? '-' : formatVal(actual)}</p>
+                            <p class="text-[10px] text-indigo-400 font-bold">${formatUnit(units)} <span class="text-[8px] opacity-60">UNITS</span></p>
+                        </td>
+                        <td class="p-4 text-center">
+                            <div class="flex items-center justify-center">
+                                ${item.base > 0 ? `
+                                    <div class="min-w-[42px] h-[42px] flex flex-col items-center justify-center rounded-full bg-white/5 border border-white/10 group-hover:border-indigo-500/40 transition-all">
+                                        <span class="text-[11px] font-black text-white">${Math.round(attPct)}%</span>
+                                        <span class="text-[7px] text-slate-500 font-bold uppercase tracking-tighter">Attach</span>
+                                    </div>
+                                ` : '<span class="text-slate-600">-</span>'}
+                            </div>
+                        </td>
+                        <td class="p-4 text-right">
+                            <p class="text-[10px] font-black text-slate-300">${isUnitAnalysis ? formatUnit(forecastOutput) : formatVal(forecastOutput)}</p>
+                            <p class="text-[8px] text-slate-500 font-bold uppercase tracking-tighter">Forecast ${forecastPct > 0 ? forecastPct.toFixed(0) + '%' : '-'}</p>
+                        </td>
+                        <td class="p-4 text-center">
+                            <div class="flex flex-col items-center p-1 bg-white/5 rounded-xl border border-white/5">
+                                <div class="flex items-center gap-1 mb-1">
+                                    <span class="text-[9px] font-black ${momColor}">${momPct >= 0 ? '+' : ''}${momPct.toFixed(1)}%</span>
+                                    <span class="text-[7px] text-slate-500 font-bold uppercase">MoM</span>
+                                </div>
+                                <div class="flex items-center gap-1 opacity-70">
+                                    <span class="text-[9px] font-black ${yoyColor}">${yoyPct >= 0 ? '+' : ''}${yoyPct.toFixed(1)}%</span>
+                                    <span class="text-[7px] text-slate-500 font-bold uppercase">YoY</span>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="p-4 text-right">
+                            <div class="flex flex-col items-end">
+                                <span class="text-[10px] font-black ${distToGoal >= 0 ? 'text-emerald-400' : 'text-rose-400'}">
+                                    ${distToGoal >= 0 ? '+' : ''}${isUnitAnalysis ? formatUnit(distToGoal) : formatVal(distToGoal)}
+                                </span>
+                                <span class="text-[7px] text-slate-500 font-bold uppercase tracking-tighter">Vs Goal</span>
+                            </div>
                         </td>
                     </tr>
                 `;
@@ -1976,7 +2522,7 @@
             const { mtd } = masterSession;
             const cleanId = (id) => String(id || '').replace(/\D/g, '');
             const branchData = mtd.filter(m => cleanId(m.branchId) === cleanId(branchId));
-            const pvlBrands = ['TITANV', 'BLUE BOX', 'MCDODO', 'Q PLUS', 'BASEUS', 'TECHPRO', 'KING KONG'];
+            const PVL_BRANDS = ['TITANV', 'BLUE BOX', 'MCDODO', 'Q PLUS', 'BASEUS', 'TECHPRO', 'KING KONG'];
             
             drilldownLevel = level;
             drilldownContext = { ...drilldownContext, branchId, filterName, title, ...contextInfo };
@@ -1989,19 +2535,22 @@
                 if (filterName === 'Watch') return m.productCode === '72';
                 if (filterName === 'BTB') {
                     const mainHardware = ['72', '48', '53', '54'];
-                    return (m.brand || '').toUpperCase() === 'APPLE' && 
-                           !mainHardware.includes(m.productCode) && 
-                           !(m.productGroup || '').toUpperCase().includes('INSURANCE');
+                    const brand = (m.brand || '').toUpperCase();
+                    const isService = (m.brandMapping || '').toUpperCase().includes('SERVICE') || (m.productGroup || '').toUpperCase().includes('INSURANCE');
+                    return (brand === 'APPLE' || brand === 'BEATS') && !mainHardware.includes(m.productCode) && !isService;
                 }
                 if (filterName === '3RD Party') {
-                    const exclude3rd = ['38', '41', '84', '64', '51', '49', '79'];
-                    return (m.brand || '').toUpperCase() !== 'APPLE' && !exclude3rd.includes(m.productCode);
+                    const mainHardware = ['72', '48', '53', '54'];
+                    const brand = (m.brand || '').toUpperCase();
+                    const isAppleBeats = (brand === 'APPLE' || brand === 'BEATS');
+                    const isService = (m.brandMapping || '').toUpperCase().includes('SERVICE') || (m.productGroup || '').toUpperCase().includes('INSURANCE');
+                    return !isAppleBeats && !mainHardware.includes(m.productCode) && !isService;
                 }
                 if (filterName === 'Apple Care+') return m.productCode === '49' && !(m.skuCode || '').toUpperCase().includes('7CAREFREE');
                 if (filterName === 'Cover+') return m.productCode === '41' && !(m.skuCode || '').toUpperCase().includes('7CAREFREE');
                 if (filterName === 'Pencil') return (m.productDetail || '').toUpperCase().includes('PENCIL');
                 if (filterName === 'Case iPhone') return m.productCode === '79' && (m.productGroup || '').toUpperCase().includes('CASE IPHONE');
-                if (filterName === 'PVL') return pvlBrands.includes((m.brand || '').toUpperCase());
+                if (filterName === 'PVL') return PVL_BRANDS.includes((m.brand || '').toUpperCase());
                 if (filterName === 'UFUND') return (m.colAM || '').toUpperCase().includes('UFUND PERSONAL');
                 if (filterName === 'SIM (Unit)') return m.productCode === '84' || m.productCode === '103';
                 return false;
@@ -2080,6 +2629,15 @@
             const sortedItems = Object.values(map)
                 .filter(item => (isUnitMode ? item.units : item.revenue) > 0)
                 .sort((a,b) => isUnitMode ? b.units - a.units : b.revenue - a.revenue);
+
+            // Autojump: Skip level 2 (Model Detail) if it's empty/placeholder for Hardware
+            const isHardwareMode = ['Mac', 'iPad', 'iPhone', 'Watch'].includes(filterName);
+            if (isHardwareMode && level === 2 && sortedItems.length === 1 && (!sortedItems[0].key || sortedItems[0].key.toLowerCase().includes('detail'))) {
+                const nextCtx = { ...drilldownContext, model: sortedItems[0].key };
+                openBranchSkuDrilldown(branchId, filterName, title, level + 1, nextCtx);
+                return;
+            }
+
             const totalMetric = sortedItems.reduce((s, r) => s + (isUnitMode ? r.units : r.revenue), 0);
 
             const modal = document.getElementById('sku-drilldown-modal');
@@ -2121,7 +2679,7 @@
             const backBtn = document.getElementById('sku-back-btn');
             if (backBtn) backBtn.innerText = level === 1 ? 'Back to Category' : 'Previous Level';
             
-            skuList.innerHTML = sortedItems.map(item => {
+            skuList.innerHTML = sortedItems.map((item, idx) => {
                 const metric = isUnitMode ? item.units : item.revenue;
                 const pct = totalMetric > 0 ? (metric / totalMetric * 100) : 0;
                 
@@ -2156,25 +2714,53 @@
                 }
 
                 return `
-                    <div class="sku-item ${level < finalLevel ? 'cursor-pointer hover:border-indigo-500/50 group/item' : ''}" ${clickAction}>
-                        <div class="flex justify-between items-start mb-2">
-                            <div>
-                                <div class="flex items-center gap-2">
-                                    <p class="text-white font-bold text-sm leading-tight group-hover/item:text-indigo-400">${item.name}</p>
-                                    ${level < finalLevel ? '<i data-lucide="chevron-right" class="w-3 h-3 text-indigo-500"></i>' : ''}
+                    <div class="bg-indigo-950/20 border border-white/5 p-4 rounded-3xl mb-3 transition-all group/item ${level < finalLevel ? 'cursor-pointer hover:border-indigo-500/40 hover:bg-indigo-500/5' : ''}" ${clickAction}>
+                        <div class="flex items-center gap-5">
+                            <!-- Percentage Bubble -->
+                            <div class="relative flex-shrink-0">
+                                <div class="w-14 h-14 rounded-full bg-indigo-500/10 border-2 border-indigo-500/20 flex flex-col items-center justify-center group-hover/item:border-indigo-500 group-hover/item:bg-indigo-500 transition-all duration-300">
+                                    <span class="text-[12px] font-black text-white group-hover/item:scale-110 transition-transform">${Math.round(pct)}%</span>
+                                    <span class="text-[7px] font-bold text-indigo-400 group-hover/item:text-white uppercase tracking-tighter">Share</span>
                                 </div>
-                                <p class="text-[10px] text-slate-500 font-black uppercase tracking-widest">${item.sub}</p>
+                                ${idx < 3 ? `
+                                <div class="absolute -top-1 -right-1 w-6 h-6 rounded-full flex items-center justify-center shadow-lg border-2 border-slate-900 ${idx === 0 ? 'bg-amber-400' : idx === 1 ? 'bg-slate-300' : 'bg-amber-600'}">
+                                    <i data-lucide="${idx === 0 ? 'trophy' : 'medal'}" class="w-3 h-3 text-slate-900"></i>
+                                </div>
+                                ` : `
+                                <div class="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-slate-900 border border-white/10 flex items-center justify-center">
+                                    <span class="text-[8px] font-black text-slate-400">${idx + 1}</span>
+                                </div>
+                                `}
                             </div>
-                            <div class="text-right">
-                                <p class="text-sm font-black text-indigo-400">${isUnitMode ? formatUnit(metric) : formatVal(metric)}</p>
-                                <p class="text-[10px] text-slate-500 font-bold">${item.units} UNITS</p>
+
+                            <!-- Content -->
+                            <div class="flex-1">
+                                <div class="flex justify-between items-start mb-3">
+                                    <div>
+                                        <div class="flex items-center gap-2">
+                                            <p class="text-[15px] font-black text-white leading-tight group-hover/item:text-indigo-400 transition-colors">${item.name}</p>
+                                            ${level < finalLevel ? '<i data-lucide="arrow-right-circle" class="w-4 h-4 text-indigo-500 group-hover/item:translate-x-1 transition-transform"></i>' : ''}
+                                        </div>
+                                        <p class="text-[9px] text-slate-500 font-bold uppercase tracking-[0.2em] mt-1">${item.sub}</p>
+                                    </div>
+                                    <div class="text-right">
+                                        <p class="text-lg font-black text-white">${isUnitMode ? formatUnit(metric) : formatVal(metric)}</p>
+                                        <div class="flex items-center gap-2 justify-end mt-0.5">
+                                            <span class="px-2 py-0.5 rounded bg-white/5 text-[9px] font-black text-slate-400 uppercase tracking-wider">${item.units} Units</span>
+                                            <div class="flex items-center gap-1 ${idx === 0 ? 'text-amber-400' : 'text-slate-500'}">
+                                                <i data-lucide="trending-up" class="w-2.5 h-2.5"></i>
+                                                <span class="text-[9px] font-black">Top Priority</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Graph Bar -->
+                                <div class="relative h-2 w-full bg-slate-800/50 rounded-full overflow-hidden">
+                                    <div class="absolute h-full bg-gradient-to-r from-indigo-600 to-indigo-400 rounded-full transition-all duration-1000 shadow-[0_0_12px_rgba(99,102,241,0.4)]" 
+                                         style="width: ${pct}%"></div>
+                                </div>
                             </div>
-                        </div>
-                        <div class="flex items-center gap-3">
-                            <div class="flex-1 bg-white/5 h-1.5 rounded-full overflow-hidden">
-                                <div class="bg-indigo-500 h-full rounded-full" style="width: ${pct}%"></div>
-                            </div>
-                            <span class="text-[10px] font-black text-slate-400 w-8 text-right">${pct.toFixed(0)}%</span>
                         </div>
                     </div>
                 `;
@@ -2202,10 +2788,12 @@
             
             if (catName === 'btb') {
                 const mainHardware = ['72', '48', '53', '54'];
-                currentDrilldownData = mtd.filter(m => (m.brand || '').toUpperCase() === 'APPLE' && !mainHardware.includes(m.productCode));
+                const isOther = (m) => (m.brandMapping || '').toUpperCase().includes('SERVICE') || (m.productGroup || '').toUpperCase().includes('INSURANCE');
+                currentDrilldownData = mtd.filter(m => (m.brand || '').toUpperCase() === 'APPLE' && !mainHardware.includes(m.productCode) && !isOther(m));
             } else if (catName === '3rd') {
                 const exclude3rd = ['38', '41', '84', '64', '51'];
-                currentDrilldownData = mtd.filter(m => (m.brand || '').toUpperCase() !== 'APPLE' && !exclude3rd.includes(m.productCode));
+                const isOther = (m) => (m.brandMapping || '').toUpperCase().includes('SERVICE') || (m.productGroup || '').toUpperCase().includes('INSURANCE');
+                currentDrilldownData = mtd.filter(m => (m.brand || '').toUpperCase() !== 'APPLE' && !exclude3rd.includes(m.productCode) && !isOther(m));
             } else {
                 currentDrilldownData = mtd.filter(m => String(m.productCode) === String(catCode));
             }
@@ -2262,33 +2850,41 @@
             setVal('drilldown-total-val', formatDrilldownValue(totalMetric, catName));
             setVal('drilldown-total-branches', Object.keys(branchMap).length);
 
-            // Branch List
+            // Branch List (Contribution Analysis)
             const branchList = document.getElementById('drilldown-branch-list');
             if (branchList) {
                 branchList.innerHTML = Object.values(branchMap)
-                    .sort((a,b) => b.revenue - a.revenue)
-                    .map(b => {
+                    .sort((a,b) => (isSim ? b.units - a.units : b.revenue - a.revenue))
+                    .map((b, idx) => {
                         const bId = b.id || b.name;
                         const bMetric = isSim ? b.units : b.revenue;
                         const pct = totalMetric > 0 ? (bMetric / totalMetric) * 100 : 0;
                         const isActive = bId === targetBranchId;
                         return `
-                            <div class="drilldown-list-item cursor-pointer ${isActive ? 'active' : ''}" onclick="renderDrilldownContent('${bId}')">
-                                <div class="flex justify-between items-start mb-2">
-                                    <div>
-                                        <p class="font-bold text-white text-sm">${b.name}</p>
-                                        <div class="flex items-center gap-2 mt-0.5">
-                                            <p class="text-[9px] text-slate-500 font-bold uppercase tracking-tight">${b.id}</p>
-                                            <span class="text-[9px] bg-slate-800 text-slate-400 px-1.5 py-0.5 rounded font-black">${b.units} UNITS</span>
+                            <div class="drilldown-list-item cursor-pointer mb-2 p-3 rounded-2xl border transition-all ${isActive ? 'bg-indigo-500/10 border-indigo-500/40 shadow-[0_0_15px_rgba(99,102,241,0.1)]' : 'bg-white/5 border-white/5 hover:border-white/20'}" onclick="renderDrilldownContent('${bId}')">
+                                <div class="flex items-center gap-3">
+                                    <div class="min-w-[42px] h-[42px] rounded-xl bg-indigo-500/20 flex flex-col items-center justify-center border border-indigo-500/30 ${isActive ? 'bg-indigo-500 text-white' : 'text-indigo-400'}">
+                                        <span class="text-[8px] font-black uppercase opacity-70 leading-none mb-0.5">Rank</span>
+                                        <span class="text-sm font-black leading-none">${idx + 1}</span>
+                                    </div>
+                                    <div class="flex-1 min-w-0">
+                                        <div class="flex justify-between items-start mb-1.5">
+                                            <div class="min-w-0">
+                                                <p class="text-xs font-black text-white truncate">${b.id || '---'}</p>
+                                                <p class="text-[8px] text-slate-500 font-bold uppercase truncate opacity-80">${b.name}</p>
+                                            </div>
+                                            <div class="text-right">
+                                                <p class="text-xs font-black text-white">${formatDrilldownValue(bMetric, catName)}</p>
+                                                <p class="text-[8px] text-slate-500 font-bold uppercase">${b.units} U</p>
+                                            </div>
+                                        </div>
+                                        <div class="flex items-center gap-2">
+                                            <div class="flex-1 bg-white/10 h-1.5 rounded-full overflow-hidden">
+                                                <div class="bg-indigo-500 h-full rounded-full transition-all duration-1000 shadow-[0_0_8px_rgba(99,102,241,0.5)]" style="width: ${pct}%"></div>
+                                            </div>
+                                            <span class="text-[10px] font-black text-indigo-400 w-9 text-right">${pct.toFixed(0)}%</span>
                                         </div>
                                     </div>
-                                    <div class="text-right">
-                                        <span class="text-xs font-black text-indigo-400 block">${totalMetric > 0 ? ((isSim ? b.units : b.revenue) / totalMetric * 100).toFixed(1) : 0}%</span>
-                                        <span class="text-[10px] text-slate-500 font-bold">${formatDrilldownValue(isSim ? b.units : b.revenue, catName)}</span>
-                                    </div>
-                                </div>
-                                <div class="w-full bg-white/5 h-1 rounded-full overflow-hidden">
-                                    <div class="bg-indigo-500 h-full rounded-full" style="width: ${pct}%"></div>
                                 </div>
                             </div>
                         `;
@@ -2313,30 +2909,46 @@
                                     const dMetric = isSim ? data.units : data.revenue;
                                     const dPct = gMetric > 0 ? (dMetric / gMetric) * 100 : 0;
                                     return `
-                                        <div class="flex justify-between items-center mt-2 pl-4 border-l border-white/10 cursor-pointer group/item hover:bg-white/5 p-1 rounded transition-colors" onclick="openSkuDrilldown('${name}')">
+                                        <div class="flex justify-between items-center mt-2 pl-4 border-l-2 border-white/5 cursor-pointer group/item hover:bg-white/5 p-2 rounded-lg transition-all" onclick="openBranchSkuDrilldown('${targetBranchId}', '${currentDrilldownCat}', '${name}', 3, {group: '${g.name.replace(/'/g, "\\'")}', model: '${name.replace(/'/g, "\\'")}'})">
                                             <div class="flex items-center gap-2">
-                                                <p class="text-[10px] text-slate-400 font-medium group-hover/item:text-indigo-300">${name}</p>
+                                                <div class="w-1.5 h-1.5 rounded-full bg-slate-600 group-hover/item:bg-indigo-400 group-hover/item:animate-pulse"></div>
+                                                <p class="text-[11px] text-slate-400 font-medium group-hover/item:text-indigo-300 transition-colors">${name}</p>
                                                 <i data-lucide="external-link" class="w-2.5 h-2.5 text-slate-600 opacity-0 group-hover/item:opacity-100 transition-opacity"></i>
                                             </div>
-                                            <div class="flex items-center gap-2">
-                                                <p class="text-[9px] text-slate-500 font-bold">${dPct.toFixed(0)}%</p>
-                                                <p class="text-[10px] text-emerald-400/80 font-bold">${formatDrilldownValue(dMetric, catName)}</p>
+                                            <div class="flex items-center gap-3">
+                                                <span class="text-[10px] text-slate-500 font-bold">${formatDrilldownValue(dMetric, catName)}</span>
+                                                <div class="w-12 bg-white/5 h-1 rounded-full overflow-hidden">
+                                                    <div class="bg-indigo-500/50 h-full rounded-full" style="width: ${dPct}%"></div>
+                                                </div>
                                             </div>
                                         </div>
                                     `;
                                 }).join('');
 
                             return `
-                                <div class="drilldown-list-item">
-                                    <div class="flex justify-between items-center mb-2 cursor-pointer group" onclick="toggleProductDetails('${groupId}')">
-                                        <div class="flex items-center gap-2">
-                                            <p class="font-bold text-white text-sm">${g.name}</p>
-                                            <i data-lucide="chevron-down" id="icon-${groupId}" class="w-3.5 h-3.5 text-slate-500 group-hover:text-white rotate-icon"></i>
+                                <div class="bg-white/5 border border-white/5 rounded-xl p-4 mb-3 hover:border-emerald-500/30 transition-all group/prod">
+                                    <div class="flex items-center gap-3 mb-3">
+                                        <div class="w-7 h-7 rounded-lg bg-emerald-500/20 flex items-center justify-center text-xs font-black text-emerald-400 border border-emerald-500/20">
+                                            ${idx + 1}
                                         </div>
-                                        <span class="text-xs font-black text-emerald-400">${pct.toFixed(1)}%</span>
-                                    </div>
-                                    <div class="w-full bg-white/5 h-1.5 rounded-full overflow-hidden mb-1">
-                                        <div class="bg-emerald-500 h-full rounded-full" style="width: ${pct}%"></div>
+                                        <div class="flex-1 cursor-pointer" onclick="toggleProductDetails('${groupId}')">
+                                            <div class="flex justify-between items-start">
+                                                <div class="flex items-center gap-2">
+                                                    <h5 class="text-sm font-black text-white group-hover/prod:text-emerald-400 transition-colors">${g.name}</h5>
+                                                    <i id="icon-${groupId}" data-lucide="chevron-down" class="w-3.5 h-3.5 text-slate-500 rotate-icon"></i>
+                                                </div>
+                                                <div class="text-right">
+                                                    <span class="text-xs font-black text-emerald-400">${formatDrilldownValue(gMetric, catName)}</span>
+                                                    <p class="text-[8px] text-slate-500 font-bold uppercase">${g.units} Units</p>
+                                                </div>
+                                            </div>
+                                            <div class="flex items-center gap-3 mt-2">
+                                                <div class="flex-1 bg-white/5 h-1.5 rounded-full overflow-hidden">
+                                                    <div class="bg-emerald-500 h-full rounded-full transition-all duration-1000" style="width: ${pct}%"></div>
+                                                </div>
+                                                <span class="text-[10px] font-black text-emerald-400/50 w-8 text-right">${pct.toFixed(0)}%</span>
+                                            </div>
+                                        </div>
                                     </div>
                                     <div id="details-${groupId}" class="product-details">
                                         <div class="pt-2 space-y-1">
@@ -2491,7 +3103,9 @@
             const buildBranchMap = (dataArr) => {
                 const mapById = {};
                 const mapByName = {};
+                const isOther = (m) => (m.brandMapping || '').toUpperCase().includes('SERVICE') || (m.productGroup || '').toUpperCase().includes('INSURANCE');
                 (dataArr || []).forEach(r => {
+                    if (isOther(r)) return; // Exclude Insurance/Service from Actual/MoM/YoY branch totals
                     const bId = cleanId(r.id || r.branchId);
                     const bName = String(r.name || r.branch || '').toUpperCase().trim();
                     const rev = r.revenue || 0;
@@ -2592,12 +3206,6 @@
                         <td class="p-4 text-center">
                             <span class="text-xs font-black ${achColor} bg-white/5 px-2 py-1 rounded">${row.achPct.toFixed(1)}%</span>
                         </td>
-                        <td class="p-4 text-center">
-                            <div class="flex flex-col items-center">
-                                <span class="text-xs font-black ${pScoreColor}">${row.pScore.toFixed(1)}%</span>
-                                <span class="text-[8px] font-black uppercase text-slate-500">${row.pScore >= 100 ? 'Ahead' : 'Delayed'}</span>
-                            </div>
-                        </td>
                         <td class="p-4 text-right">
                             <div class="flex flex-col items-end">
                                 ${row.actual >= row.target ? 
@@ -2607,72 +3215,400 @@
                                 }
                             </div>
                         </td>
-                        <td class="p-4 text-right text-xs font-bold text-slate-300">
-                            <div class="flex flex-col items-end">
-                                <span class="${row.momDiff >= 0 ? 'text-emerald-400' : 'text-rose-400'}">${row.momPct.toFixed(1)}%</span>
-                                <span class="text-[8px] opacity-50">MoM</span>
+                        <td class="p-4 text-center border-x border-white/5">
+                            <div class="flex flex-col items-center">
+                                <span class="text-xs font-black ${pScoreColor}">${row.pScore.toFixed(1)}%</span>
+                                <span class="text-[8px] font-black uppercase text-slate-500">${row.pScore >= 100 ? 'Ahead' : 'Delayed'}</span>
                             </div>
                         </td>
-                        <td class="p-4 text-right text-xs font-bold text-slate-300">
+                        <td class="p-4 text-right bg-indigo-500/5">
                             <div class="flex flex-col items-end">
-                                <span class="${row.yoyDiff >= 0 ? 'text-emerald-400' : 'text-rose-400'}">${row.yoyPct.toFixed(1)}%</span>
-                                <span class="text-[8px] opacity-50">YoY</span>
+                                <span class="text-sm font-bold text-indigo-300">${formatVal(row.forecastBaht)}</span>
+                                <span class="text-[9px] font-black text-slate-500">${row.forecastPct.toFixed(0)}% EST.</span>
                             </div>
                         </td>
                         <td class="p-4 text-right">
                             <div class="flex flex-col items-end">
-                                <span class="text-sm font-bold text-indigo-300">${formatVal(row.forecastBaht)}</span>
-                                <span class="text-[9px] text-slate-500 font-black">${row.forecastPct.toFixed(1)}%</span>
+                                <span class="text-xs font-bold ${row.momDiff >= 0 ? 'text-emerald-400' : 'text-rose-400'}">${row.momPct.toFixed(1)}%</span>
+                                <span class="text-[9px] font-black ${row.momDiff >= 0 ? 'text-emerald-500/50' : 'text-rose-500/50'}">${row.momDiff >= 0 ? '+' : ''}${formatVal(row.momDiff)}</span>
                             </div>
                         </td>
-                        <td class="p-4 pr-5 text-right font-black ${diffColor} text-sm">
-                            ${row.diffBaht >= 0 ? '+' : ''}${formatVal(row.diffBaht)}
+                        <td class="p-4 text-right">
+                            <div class="flex flex-col items-end">
+                                <span class="text-xs font-bold ${row.yoyDiff >= 0 ? 'text-emerald-400' : 'text-rose-400'}">${row.yoyPct.toFixed(1)}%</span>
+                                <span class="text-[9px] font-black ${row.yoyDiff >= 0 ? 'text-emerald-500/50' : 'text-rose-500/50'}">${row.yoyDiff >= 0 ? '+' : ''}${formatVal(row.yoyDiff)}</span>
+                            </div>
+                        </td>
+                        <td class="p-4 text-right">
+                            <div class="flex flex-row items-center justify-end gap-1.5">
+                                <span class="text-sm font-black ${diffColor}">${row.diffBaht >= 0 ? '+' : '-'}${formatVal(Math.abs(row.diffBaht))}</span>
+                                <i data-lucide="${row.diffBaht >= 0 ? 'trending-up' : 'trending-down'}" class="w-3.5 h-3.5 ${diffColor}"></i>
+                            </div>
                         </td>
                     </tr>
                 `;
             }).join('');
         }
 
-        async function captureBranchPerformance() {
-            const section = document.getElementById('branch-performance-section');
-            if (!section) return;
+        async function captureDashboard() {
+            const dashboard = document.getElementById('view-overview');
+            if (!dashboard) return;
 
-            const btn = section.querySelector('button');
-            const originalBtnDisplay = btn.style.display;
+            // Better to show a "Capturing..." state
+            const captureBtn = document.querySelector('button[onclick="captureDashboard()"]');
+            const originalBtnContent = captureBtn.innerHTML;
             
             try {
-                // Hide button during capture
-                btn.style.opacity = '0';
-                
-                const canvas = await html2canvas(section, {
+                captureBtn.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> Processing...';
+                captureBtn.disabled = true;
+
+                const canvas = await html2canvas(dashboard, {
                     backgroundColor: '#0f172a',
-                    scale: 2, // Higher quality
+                    scale: 2, // Better resolution
                     logging: false,
-                    useCORS: true
+                    useCORS: true,
+                    // Ignore some elements if needed
+                    ignoreElements: (el) => el.tagName === 'BUTTON' && el.innerText.includes('CAPTURE')
                 });
 
                 canvas.toBlob(async (blob) => {
                     try {
                         const item = new ClipboardItem({ "image/png": blob });
                         await navigator.clipboard.write([item]);
-                        alert("✅ Table copied to clipboard! You can now paste it in Line.");
+                        alert("✅ Dashboard copied to clipboard! You can now paste it in Line or Email.");
                     } catch (err) {
                         console.error("Clipboard failed:", err);
-                        // Fallback to download if clipboard fails
+                        // Fallback to download
                         const link = document.createElement('a');
-                        link.download = `Branch_Performance.png`;
+                        link.download = `Dashboard_Capture_${new Date().toLocaleDateString()}.png`;
                         link.href = canvas.toDataURL('image/png');
                         link.click();
-                        alert("Clipboard access denied. Image downloaded instead.");
+                        alert("Clipboard restricted. Image downloaded instead!");
                     }
                 }, "image/png");
+
             } catch (err) {
                 console.error("Capture failed:", err);
-                alert("Capture failed. Please try again.");
+                alert("Capture failed. Error: " + err.message);
             } finally {
-                btn.style.opacity = '1';
+                captureBtn.innerHTML = originalBtnContent;
+                captureBtn.disabled = false;
+                lucide.createIcons();
             }
         }
+        function closeFocusDrilldown() {
+            document.getElementById('focus-drilldown-modal').classList.remove('active');
+        }
+
+        function openFocusDrilldown(itemId) {
+            const modal = document.getElementById('focus-drilldown-modal');
+            const tbody = document.getElementById('focus-modal-body');
+            const { target, mtd, lastmonth, lastyear } = masterSession;
+            
+            const itemMap = {
+                cover: { label: 'Cover+', icon: 'shield-check', color: 'amber', rate: 25 },
+                ac: { label: 'AC+', icon: 'heart-pulse', color: 'indigo', rate: 20 },
+                pencil: { label: 'Pencil', icon: 'pencil', color: 'emerald', rate: 85 },
+                sim: { label: 'SIM', icon: 'radio', color: 'rose', rate: 85 },
+                pvl: { label: 'PVL', icon: 'award', color: 'sky', rate: 10, isBaht: true },
+                case: { label: 'Case iPhone', icon: 'smartphone', color: 'indigo', rate: 60 },
+                ufund: { label: 'UFUND', icon: 'zap', color: 'orange', rate: 8 },
+                other: { label: 'Insurance / Other', icon: 'shield', color: 'slate', rate: 0 }
+            };
+
+            const info = itemMap[itemId];
+            if (!info) return;
+
+            // Update Header
+            document.getElementById('focus-modal-title').innerText = info.label;
+            document.getElementById('focus-modal-subtitle').innerText = `Branch Performance Summary (${info.isBaht ? 'Revenue' : 'Units'} Focus)`;
+            const iconContainer = document.getElementById('focus-modal-icon');
+            iconContainer.className = `w-12 h-12 rounded-2xl flex items-center justify-center bg-${info.color}-500/10 border border-${info.color}-500/20 text-${info.color}-400`;
+            iconContainer.innerHTML = `<i data-lucide="${info.icon}" class="w-6 h-6"></i>`;
+
+            // Update Column Labels
+            document.getElementById('col-actual-label').innerText = info.isBaht ? 'Actual Revenue' : 'Actual Units';
+            document.getElementById('col-ach-label').innerText = info.rate > 0 ? (info.isBaht ? '% SHARE' : '% ATT') : 'ACH%';
+            document.getElementById('col-forecast-label').innerText = info.isBaht ? 'Forecast (฿)' : 'Forecast (UNT)';
+            document.getElementById('col-diff-label').innerText = `Vs Goal (${info.rate}%)`;
+            
+            // Set context for summary/capture
+            window.activeFocusItemId = itemId;
+            window.activeFocusInfo = info;
+
+            const cleanId = (id) => String(id || '').replace(/\D/g, '');
+            
+            // Calculation Helpers
+            const getBranchFocus = (dataArr, filterId) => {
+                const branchMap = {};
+                const mainHardware = ['53', '54', '48', '72'];
+                const PVL_BRANDS = ['TITANV', 'BLUE BOX', 'MCDODO', 'Q PLUS', 'BASEUS', 'TECHPRO', 'KING KONG'];
+
+                (dataArr || []).forEach(r => {
+                    const bId = cleanId(r.branchId);
+                    if (!bId) return;
+                    if (!branchMap[bId]) branchMap[bId] = { units: 0, rev: 0, iphones: 0, ipads: 0, third: 0, thirdRev: 0 };
+                    
+                    const pCode = String(r.productCode || '');
+                    const rev = r.revenue || 0;
+                    const units = (mainHardware.includes(pCode) && rev <= 0) ? 0 : (r.units || 0);
+
+                    // Denominators
+                    if (pCode === '48') branchMap[bId].iphones += units;
+                    if (pCode === '54') branchMap[bId].ipads += units;
+                    if (!mainHardware.includes(pCode)) {
+                        branchMap[bId].third += units;
+                        branchMap[bId].thirdRev += rev;
+                    }
+
+                    // Item Filters
+                    let match = false;
+                    const colI = String(r.colI || '');
+                    const colM = String(r.colM || '').toUpperCase();
+                    const brand = String(r.brand || '').toUpperCase();
+                    const group = String(r.productGroup || '').toUpperCase();
+                    const mapping = String(r.brandMapping || '').toUpperCase();
+
+                    if (itemId === 'cover') match = colI === '41' && String(r.skuCode).toUpperCase().includes('COVERPLUS');
+                    else if (itemId === 'ac') match = colI === '49' && brand === 'APPLE';
+                    else if (itemId === 'pencil') match = colI === '51' && colM.includes('PENCIL');
+                    else if (itemId === 'sim') match = pCode === '84';
+                    else if (itemId === 'pvl') match = PVL_BRANDS.includes(brand);
+                    else if (itemId === 'case') match = group.includes('CASE IPHONE');
+                    else if (itemId === 'ufund') match = mapping.includes('UFUND') || String(r.colAM || '').toUpperCase().includes('UFUND PERSONAL');
+                    else if (itemId === 'other') match = mapping.includes('SERVICE') || group.includes('INSURANCE');
+
+                    if (match) {
+                        branchMap[bId].units += units;
+                        branchMap[bId].rev += rev;
+                    }
+                });
+                return branchMap;
+            };
+
+            const mtdBranches = getBranchFocus(mtd, itemId);
+            const momBranches = getBranchFocus(lastmonth, itemId);
+            const yoyBranches = getBranchFocus(lastyear, itemId);
+
+            const now = new Date();
+            const currentDay = now.getDate();
+            const totalDaysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+
+            let totalUnitsCount = 0;
+            let totalAchSum = 0;
+            let branchCountWithBase = 0;
+
+            const rows = target.map(t => {
+                const bId = cleanId(t.id);
+                const mtd = mtdBranches[bId] || { units: 0, rev: 0, iphones: 0, ipads: 0, third: 0, thirdRev: 0 };
+                const mom = momBranches[bId] || { units: 0, rev: 0, iphones: 0, ipads: 0, third: 0, thirdRev: 0 };
+                const yoy = yoyBranches[bId] || { units: 0, rev: 0, iphones: 0, ipads: 0, third: 0, thirdRev: 0 };
+
+                let base = 0;
+                let isUnitBase = true;
+                if (itemId === 'cover' || itemId === 'sim' || itemId === 'case' || itemId === 'ufund') base = mtd.iphones;
+                else if (itemId === 'ac') base = mtd.iphones + mtd.ipads;
+                else if (itemId === 'pencil') base = mtd.ipads;
+                else if (itemId === 'pvl') {
+                    base = mtd.thirdRev;
+                    isUnitBase = false;
+                }
+
+                const actual = info.isBaht ? mtd.rev : mtd.units;
+                const prevMom = info.isBaht ? mom.rev : mom.units;
+                const prevYoy = info.isBaht ? yoy.rev : yoy.units;
+
+                const achValue = base > 0 ? (actual / base * 100) : 0;
+                const momPct = prevMom > 0 ? ((actual - prevMom) / prevMom * 100) : 0;
+                const yoyPct = prevYoy > 0 ? ((actual - prevYoy) / prevYoy * 100) : 0;
+                
+                const forecast = currentDay > 0 ? (actual / currentDay * totalDaysInMonth) : 0;
+                
+                // Goal logic: Target applied to base
+                const goal = base * (info.rate / 100);
+                const distToGoal = actual - goal;
+                const forecastPct = goal > 0 ? (forecast / goal * 100) : 0;
+
+                if (actual > 0 || base > 0) {
+                    totalUnitsCount += actual;
+                    if (base > 0) {
+                        totalAchSum += achValue;
+                        branchCountWithBase++;
+                    }
+                    return {
+                        name: t.name,
+                        actual, base, achValue, isUnitBase, momPct, yoyPct, forecast, forecastPct, distToGoal
+                    };
+                }
+                return null;
+            }).filter(r => r !== null).sort((a,b) => b.actual - a.actual);
+
+            tbody.innerHTML = rows.map(r => {
+                const achColor = r.achValue >= info.rate ? 'text-emerald-400' : 'text-rose-400';
+                const distColor = r.distToGoal >= 0 ? 'text-emerald-400' : 'text-rose-400';
+                
+                return `
+                    <tr class="hover:bg-white/[0.02] transition-colors">
+                        <td class="p-5 text-sm font-bold text-white">${r.name}</td>
+                        <td class="p-5 text-right font-black text-slate-200">
+                            ${info.isBaht ? formatVal(r.actual) : formatUnit(r.actual)}
+                            ${r.base > 0 ? `<div class="text-[8px] text-slate-500 font-bold uppercase mt-1">Base: ${r.isUnitBase ? formatUnit(r.base) : formatVal(r.base)}</div>` : ''}
+                        </td>
+                        <td class="p-5 text-center">
+                            <span class="px-2 py-1 rounded-lg bg-white/5 border border-white/5 font-black text-xs ${achColor}">${r.achValue.toFixed(1)}%</span>
+                        </td>
+                        <td class="p-5 text-right">
+                            <div class="text-[10px] font-black text-indigo-300">${info.isBaht ? formatVal(r.forecast) : formatUnit(r.forecast)}</div>
+                            <div class="text-[8px] font-bold text-slate-500 uppercase mt-0.5">${r.forecastPct.toFixed(0)}% Ach.</div>
+                        </td>
+                        <td class="p-5 text-center">
+                            <div class="inline-flex items-center gap-3">
+                                <div class="flex flex-col items-center">
+                                    <span class="text-[8px] font-black ${r.momPct >= 0 ? 'text-emerald-500' : 'text-rose-500'}">${r.momPct >= 0 ? '+' : ''}${r.momPct.toFixed(0)}%</span>
+                                    <span class="text-[6px] text-slate-600 font-bold uppercase">MOM</span>
+                                </div>
+                                <div class="flex flex-col items-center border-l border-white/10 pl-3">
+                                    <span class="text-[8px] font-black ${r.yoyPct >= 0 ? 'text-emerald-500' : 'text-rose-500'}">${r.yoyPct >= 0 ? '+' : ''}${r.yoyPct.toFixed(0)}%</span>
+                                    <span class="text-[6px] text-slate-600 font-bold uppercase">YOY</span>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="p-5 text-right">
+                            <div class="flex flex-col items-end">
+                                <span class="text-[11px] font-black ${distColor}">${r.distToGoal >= 0 ? '+' : ''}${info.isBaht ? formatVal(r.distToGoal) : formatUnit(r.distToGoal)}</span>
+                                <span class="text-[7px] text-slate-500 font-black uppercase">To Goal</span>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+
+            document.getElementById('focus-total-mtd').innerText = info.isBaht ? formatVal(totalUnitsCount) : formatUnit(totalUnitsCount);
+            document.getElementById('focus-avg-ach').innerText = branchCountWithBase > 0 ? (totalAchSum / branchCountWithBase).toFixed(1) + '%' : '0%';
+
+            modal.classList.add('active');
+            lucide.createIcons();
+        }
+
+        async function captureFocusDrilldown() {
+            const modalContent = document.querySelector('#focus-drilldown-modal .modal-content-wrapper');
+            if (!modalContent) return;
+
+            const captureBtn = document.querySelector('button[onclick="captureFocusDrilldown()"]');
+            const originalBtnContent = captureBtn.innerHTML;
+
+            try {
+                captureBtn.innerHTML = '<i data-lucide="loader-2" class="w-3 h-3 animate-spin"></i> ...';
+                captureBtn.disabled = true;
+
+                const canvas = await html2canvas(modalContent, {
+                    backgroundColor: '#0f172a',
+                    scale: 2,
+                    logging: false,
+                    useCORS: true,
+                    ignoreElements: (el) => el.tagName === 'BUTTON' && (el.innerText.toUpperCase().includes('CAPTURE') || el.innerText.toUpperCase().includes('SUMMARY') || el.tagName === 'I')
+                });
+
+                canvas.toBlob(async (blob) => {
+                    try {
+                        const item = new ClipboardItem({ "image/png": blob });
+                        await navigator.clipboard.write([item]);
+                        alert("✅ Focus Summary Image copied! Paste it in Line.");
+                    } catch (err) {
+                        const link = document.createElement('a');
+                        link.download = `Focus_${window.activeFocusInfo.label}_${new Date().toLocaleDateString()}.png`;
+                        link.href = canvas.toDataURL('image/png');
+                        link.click();
+                        alert("Image downloaded instead!");
+                    }
+                }, "image/png");
+
+            } catch (err) {
+                console.error("Capture failed:", err);
+            } finally {
+                captureBtn.innerHTML = originalBtnContent;
+                captureBtn.disabled = false;
+                lucide.createIcons();
+            }
+        }
+
+        function copyFocusSummary() {
+            const { label } = window.activeFocusInfo;
+            const avgAchStr = document.getElementById('focus-avg-ach').innerText;
+            const avgAchValue = parseFloat(avgAchStr);
+
+            let emoji = '📈';
+            let message = 'เป็นกำลังใจให้นะครับ ลองเน้นการนำเสนอเพิ่มอีกนิด ยอดพุ่งแน่นอน! 💪';
+            
+            if (avgAchValue >= 100) {
+                emoji = '🚀';
+                message = 'เยี่ยมมากครับ! ทำได้ตามเป้าแล้ว รักษามาตรฐานไว้นะครับ สุดยอด! 🤩';
+            } else if (avgAchValue >= 90) {
+                emoji = '⭐';
+                message = 'อีกนิดเดียวจะถึงเป้าแล้วครับ สู้ๆ! ทีมงานทำได้แน่นอน! ✌️';
+            } else if (avgAchValue >= 80) {
+                emoji = '💡';
+                message = 'ทำได้ดีแล้วครับ พยายามอีกนิดเป้าอยู่แค่เอื้อม! 👊';
+            }
+
+            const summaryText = `${emoji} [${label} สรุปภาพรวม]\n` +
+                                `━━━━━━━━━━━━━━━━\n` +
+                                `ความสำเร็จเฉลี่ย: ${avgAchStr}\n` +
+                                `${message}\n` +
+                                `━━━━━━━━━━━━━━━━\n` +
+                                `Generated at ${new Date().toLocaleString()}`;
+
+            navigator.clipboard.writeText(summaryText).then(() => {
+                alert("✅ สรุปแบบย่อถูกคัดลอกแล้ว! พร้อมส่งใน Line");
+            }).catch(err => {
+                console.error('Failed to copy text: ', err);
+            });
+        }
+
+        async function captureBranchPerformance() {
+            const tableSection = document.getElementById('branch-performance-section');
+            if (!tableSection) return;
+
+            const captureBtn = document.querySelector('button[onclick="captureBranchPerformance()"]');
+            const originalBtnContent = captureBtn.innerHTML;
+
+            try {
+                captureBtn.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> Processing...';
+                captureBtn.disabled = true;
+
+                const canvas = await html2canvas(tableSection, {
+                    backgroundColor: '#0f172a',
+                    scale: 2,
+                    logging: false,
+                    useCORS: true,
+                    ignoreElements: (el) => el.tagName === 'BUTTON' && el.innerText.toUpperCase().includes('COPY')
+                });
+
+                canvas.toBlob(async (blob) => {
+                    try {
+                        const item = new ClipboardItem({ "image/png": blob });
+                        await navigator.clipboard.write([item]);
+                        alert("✅ Table copied to clipboard! You can now paste it in Line or Email.");
+                    } catch (err) {
+                        console.error("Clipboard failed:", err);
+                        const link = document.createElement('a');
+                        link.download = `Branch_Performance_${new Date().toLocaleDateString()}.png`;
+                        link.href = canvas.toDataURL('image/png');
+                        link.click();
+                        alert("Clipboard restricted. Image downloaded instead!");
+                    }
+                }, "image/png");
+
+            } catch (err) {
+                console.error("Capture failed:", err);
+                alert("Capture failed. Error: " + err.message);
+            } finally {
+                captureBtn.innerHTML = originalBtnContent;
+                captureBtn.disabled = false;
+                lucide.createIcons();
+            }
+        }
+
 
 
         function formatVal(v) {
